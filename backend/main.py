@@ -60,10 +60,12 @@ app = FastAPI(
 # 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=["*"],  # 在开发环境中允许所有来源，生产环境中应该限制
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Content-Length", "Content-Type", "X-Process-Time"],
+    max_age=600,  # 预检请求缓存10分钟
 )
 
 # 添加可信主机中间件

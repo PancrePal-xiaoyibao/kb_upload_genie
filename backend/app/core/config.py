@@ -22,15 +22,14 @@ class Settings(BaseSettings):
     HOST: str = Field(default="0.0.0.0")
     PORT: int = Field(default=8000)
     ALLOWED_HOSTS: Union[str, List[str]] = Field(
-        default="localhost,127.0.0.1,0.0.0.0"
+        default="localhost,127.0.0.1,0.0.0.0,http://localhost:3000"
     )
     
     # 数据库配置
     DATABASE_URL: str = Field(...)
     DATABASE_ECHO: bool = Field(default=False)
     
-    # Redis配置
-    REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    # Redis配置 - 已移除，使用SQLite作为轻量级解决方案
     
     # JWT配置
     JWT_SECRET_KEY: str = Field(default="")
@@ -69,9 +68,8 @@ class Settings(BaseSettings):
         default=".md,.txt,.docx,.pdf,.pptx"
     )
     
-    # Celery配置
-    CELERY_BROKER_URL: str = Field(default="")
-    CELERY_RESULT_BACKEND: str = Field(default="")
+    # 任务队列配置 - 简化版，不使用Celery
+    ENABLE_BACKGROUND_TASKS: bool = Field(default=False)
     
     # 邮件配置
     SMTP_HOST: Optional[str] = Field(default=None)
@@ -108,21 +106,7 @@ class Settings(BaseSettings):
             return info.data.get("SECRET_KEY", "")
         return v
     
-    @field_validator("CELERY_BROKER_URL", mode="before")
-    @classmethod
-    def set_celery_broker_url(cls, v, info):
-        """设置Celery代理URL，如果未提供则使用REDIS_URL"""
-        if not v and info.data:
-            return info.data.get("REDIS_URL", "redis://localhost:6379/0")
-        return v
-    
-    @field_validator("CELERY_RESULT_BACKEND", mode="before")
-    @classmethod
-    def set_celery_result_backend(cls, v, info):
-        """设置Celery结果后端，如果未提供则使用REDIS_URL"""
-        if not v and info.data:
-            return info.data.get("REDIS_URL", "redis://localhost:6379/0")
-        return v
+    # 移除了Celery相关的验证器，因为我们不再使用Celery
     
     class Config:
         env_file = ".env"
