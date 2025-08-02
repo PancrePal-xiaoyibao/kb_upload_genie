@@ -84,16 +84,24 @@ github repo: https://github.com/PancrePal-xiaoyibao/kb_upload_genie.git
 - **版权合规检查**: 确保上传内容符合版权法规要求
 - **版权信息记录**: 完整记录版权相关信息和变更历史
 
+管理员登录进去没有操作界面，界面内容：1. 上传记录表格式，其中失败的，可以人工审核，配批准按钮，人工审批通过后续保存上传到git  2.保留标准用户上传模块，让管理员可以上传文件   3.系统配置模块：包括：agent的提示词，模型选择（glm4.5系列），以及模型apikey输入模块，git参数配置模块，保存按钮。上面的UI交互你来设计。
+
 ## 3. 系统架构
 
 ### 3.1 整体架构
 ```
 前端 (React/Vue) ↔ 后端API (Python/FastAPI) ↔ 数据库 (PostgreSQL)
 自定义                                ↓
-                    GitHub API + AI服务集群
+                    GitHub API + GitCode API + AI服务集群
                                 ↓
                 OpenAI兼容接口 + GLM4.5系列 + Gemini 2.5系列 + Moonshot Kimi系列 + StepFun Step系列 + 本地模型
 ```
+
+### 3.1.1 多平台代码托管集成
+- **GitHub**: 主要代码托管平台，面向国际用户
+- **GitCode**: 国内代码托管平台，提供更快的访问速度
+- **一键同步**: 支持GitHub与GitCode之间的双向同步
+- **智能路由**: 根据用户地理位置自动选择最优平台
 
 ### 3.2 技术栈选择
 
@@ -155,10 +163,20 @@ z- **AI服务**:
 - 分类管理
 - 智能分类推荐
 
-#### 3.3.5 GitHub集成模块 (GitHub Integration)
-- GitHub API集成
-- 文件上传和管理
-- 目录结构同步
+#### 3.3.5 代码托管集成模块 (Git Platform Integration)
+- **GitHub集成**
+  - GitHub API集成
+  - 文件上传和管理
+  - 目录结构同步
+- **GitCode集成**
+  - GitCode API集成
+  - 国内高速访问优化
+  - 与GitHub的双向同步
+- **多平台管理**
+  - 统一的Git操作接口
+  - 智能平台选择
+  - 同步状态监控
+  - 冲突解决机制
 
 #### 3.3.6 版权管理模块 (Copyright Module)
 - 版权状态管理
@@ -201,6 +219,9 @@ CREATE TABLE articles (
     copyright_notice TEXT, -- 自动生成的版权声明
     original_source VARCHAR(500), -- 原始来源
     github_path VARCHAR(500),
+    gitcode_path VARCHAR(500), -- GitCode路径
+    sync_status VARCHAR(20) DEFAULT 'none', -- none, github_only, gitcode_only, synced, conflict
+    last_sync_time TIMESTAMP, -- 最后同步时间
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -214,6 +235,7 @@ CREATE TABLE categories (
     path VARCHAR(500) NOT NULL,
     parent_id INTEGER REFERENCES categories(id),
     github_path VARCHAR(500),
+    gitcode_path VARCHAR(500), -- GitCode路径
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -233,11 +255,30 @@ CREATE TABLE reviews (
 );
 ```
 
+#### 4.1.5 同步记录表 (sync_records)
+```sql
+CREATE TABLE sync_records (
+    id SERIAL PRIMARY KEY,
+    article_id INTEGER REFERENCES articles(id),
+    source_platform VARCHAR(20), -- github, gitcode
+    target_platform VARCHAR(20), -- github, gitcode
+    sync_type VARCHAR(20), -- upload, update, delete
+    status VARCHAR(20), -- pending, success, failed, conflict
+    error_message TEXT,
+    source_commit_hash VARCHAR(40),
+    target_commit_hash VARCHAR(40),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+```
+
 ### 4.2 数据关系
 - 用户 1:N 文章
 - 分类 1:N 文章
 - 文章 1:N 审核记录
+- 文章 1:N 同步记录
 - 分类支持树形结构（parent_id自引用）
+- 同步记录追踪GitHub与GitCode之间的双向同步状态
 
 ## 5. API设计
 
@@ -284,11 +325,34 @@ POST /api/copyright/generate-notice  # 生成版权声明
 PUT  /api/copyright/update/{article_id}  # 更新版权信息
 ```
 
-### 5.2 GitHub集成API
+### 5.2 多平台Git集成API
+
+#### 5.2.1 GitHub集成API
 ```
-GET  /api/github/repos      # 获取仓库信息
-GET  /api/github/tree       # 获取目录结构
+GET  /api/github/repos      # 获取GitHub仓库信息
+GET  /api/github/tree       # 获取GitHub目录结构
 POST /api/github/upload     # 上传文件到GitHub
+GET  /api/github/status     # 获取GitHub连接状态
+```
+
+#### 5.2.2 GitCode集成API
+```
+GET  /api/gitcode/repos     # 获取GitCode仓库信息
+GET  /api/gitcode/tree      # 获取GitCode目录结构
+POST /api/gitcode/upload    # 上传文件到GitCode
+GET  /api/gitcode/status    # 获取GitCode连接状态
+```
+
+#### 5.2.3 同步管理API
+```
+POST /api/sync/github-to-gitcode/{article_id}  # GitHub同步到GitCode
+POST /api/sync/gitcode-to-github/{article_id}  # GitCode同步到GitHub
+POST /api/sync/bidirectional/{article_id}      # 双向同步
+GET  /api/sync/status/{article_id}             # 获取同步状态
+GET  /api/sync/conflicts                       # 获取同步冲突列表
+POST /api/sync/resolve-conflict/{sync_id}      # 解决同步冲突
+GET  /api/sync/history/{article_id}            # 获取同步历史
+POST /api/sync/batch                           # 批量同步
 ```
 
 ### 5.3 AI服务API
@@ -501,7 +565,12 @@ AI_CONFIG = {
 2. **第二阶段（3周）**: 核心功能开发
 3. **第三阶段（2周）**: AI审核集成
 4. **第四阶段（2周）**: GitHub集成
-5. **第五阶段（1周）**: 测试和优化
+5. **第五阶段（2周）**: GitCode集成和多平台同步
+   - GitCode API集成
+   - 双向同步机制实现
+   - 冲突检测和解决
+   - 智能平台选择
+6. **第六阶段（1周）**: 测试和优化
 
 ### 10.2 里程碑
 - MVP版本发布
@@ -512,8 +581,11 @@ AI_CONFIG = {
 
 ### 11.1 技术风险
 - GitHub API限制
+- GitCode API限制和稳定性
 - AI服务稳定性
+- 多平台同步冲突
 - 性能瓶颈
+- 网络连接稳定性（国内外访问差异）
 
 ### 11.2 业务风险
 - 用户接受度
@@ -532,6 +604,10 @@ AI_CONFIG = {
 - 移动端应用
 - 协作编辑功能
 - 评论和讨论系统
+- 更多代码托管平台集成（Gitee、Coding、GitLab等）
+- 多平台统计和分析面板
+- 自动化同步策略配置
+- 跨平台协作工作流
 
 ### 12.2 技术扩展
 - 微服务架构
@@ -551,6 +627,9 @@ AI_CONFIG = {
 - **自动分类识别**: 系统自动识别文章分类，用户无需手动选择
 - **配置记忆**: 系统记住用户的上传配置，下次上传时自动应用
 - **智能建议**: 基于历史数据提供个性化建议
+- **智能平台选择**: 根据用户地理位置和网络状况自动选择最优平台
+- **一键同步**: 支持GitHub与GitCode之间的一键双向同步
+- **同步状态监控**: 实时显示多平台同步状态和进度
 
 ### 13.3 用户友好设计
 - **拖拽上传**: 支持文件拖拽上传
@@ -578,9 +657,77 @@ AI_CONFIG = {
 - **安全扫描**: 定期进行安全漏洞扫描
 - **用户反馈**: 建立用户反馈收集机制
 
+## 15. GitCode集成详细说明
+
+### 15.1 GitCode平台优势
+- **国内高速访问**: 为国内用户提供更快的访问速度
+- **本土化服务**: 更好的中文支持和本土化功能
+- **合规性**: 符合国内数据安全和隐私保护要求
+- **生态兼容**: 与国内开发者生态系统更好集成
+
+### 15.2 同步策略
+#### 15.2.1 智能同步
+- **地理位置检测**: 自动检测用户地理位置，优先选择最优平台
+- **网络质量评估**: 实时评估到各平台的网络质量
+- **负载均衡**: 根据平台负载情况智能分配
+
+#### 15.2.2 同步模式
+- **实时同步**: 文件上传后立即同步到另一平台
+- **定时同步**: 按设定时间间隔批量同步
+- **手动同步**: 用户手动触发同步操作
+- **选择性同步**: 用户可选择特定文件或目录进行同步
+
+### 15.3 冲突处理机制
+#### 15.3.1 冲突检测
+- **内容比较**: 基于文件内容哈希值检测冲突
+- **时间戳比较**: 比较最后修改时间
+- **版本追踪**: 追踪文件版本变更历史
+
+#### 15.3.2 冲突解决
+- **自动合并**: 对于非冲突性修改自动合并
+- **用户选择**: 冲突时提供选项让用户决定
+- **版本保留**: 保留冲突版本供后续处理
+- **回滚机制**: 支持同步操作回滚
+
+### 15.4 用户界面设计
+#### 15.4.1 平台选择界面
+- **平台状态显示**: 实时显示各平台连接状态
+- **速度测试**: 提供网络速度测试功能
+- **推荐平台**: 基于用户位置和网络状况推荐最优平台
+
+#### 15.4.2 同步管理界面
+- **同步状态面板**: 显示所有文件的同步状态
+- **同步历史**: 查看详细的同步操作历史
+- **冲突管理**: 专门的冲突处理界面
+- **批量操作**: 支持批量同步和管理操作
+
+### 15.5 技术实现要点
+#### 15.5.1 API适配
+- **统一接口**: 为GitHub和GitCode提供统一的操作接口
+- **差异处理**: 处理两个平台API的差异
+- **错误处理**: 统一的错误处理和重试机制
+
+#### 15.5.2 数据一致性
+- **事务处理**: 确保跨平台操作的原子性
+- **数据校验**: 同步前后的数据完整性校验
+- **状态同步**: 保持本地数据库与远程平台状态一致
+
+### 15.6 性能优化
+- **并行同步**: 支持多文件并行同步
+- **增量同步**: 只同步变更的部分
+- **压缩传输**: 对大文件进行压缩传输
+- **缓存机制**: 缓存常用数据减少API调用
+
+### 15.7 安全考虑
+- **访问令牌管理**: 安全存储和管理各平台的访问令牌
+- **传输加密**: 确保数据传输过程的安全性
+- **权限控制**: 细粒度的权限控制机制
+- **审计日志**: 完整的操作审计日志
+
 ---
 
-**文档版本**: v1.0  
+**文档版本**: v1.1  
 **创建日期**: 2024年  
 **最后更新**: 2024年  
-**维护人员**: 开发团队
+**维护人员**: 开发团队  
+**更新内容**: 添加GitCode集成和多平台同步功能
