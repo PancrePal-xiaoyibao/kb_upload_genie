@@ -13,6 +13,10 @@ KB Upload Genie 是一个智能化的GitHub仓库内容上传分类系统，专�
 - 🚀 **GitHub集成**: 自动上传到指定GitHub仓库
 - 👥 **用户友好**: 专为小白用户设计的简洁界面
 
+## 架构图
+<img width="1244" height="748" alt="image" src="https://github.com/user-attachments/assets/ab458067-2dd6-42a1-a8ab-46a06f89bd28" />
+
+
 ## 技术栈
 
 ### 前端
