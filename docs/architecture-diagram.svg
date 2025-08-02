@@ -40,12 +40,13 @@
   <text x="325" y="145" text-anchor="middle" class="box-text">自动处理</text>
   <text x="325" y="155" text-anchor="middle" class="box-text">用户习惯度高</text>
   
-  <!-- 微信小程序 -->
+  <!-- 多平台群机器人 -->
   <rect x="420" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
-  <text x="495" y="125" text-anchor="middle" class="box-text">微信小程序</text>
-  <text x="495" y="135" text-anchor="middle" class="box-text">移动上传</text>
-  <text x="495" y="145" text-anchor="middle" class="box-text">语音转文字</text>
-  <text x="495" y="155" text-anchor="middle" class="box-text">用户基数大</text>
+  <text x="495" y="120" text-anchor="middle" class="box-text">多平台群机器人</text>
+  <text x="495" y="130" text-anchor="middle" class="box-text">微信/飞书/钉钉</text>
+  <text x="495" y="140" text-anchor="middle" class="box-text">Telegram/QQ群</text>
+  <text x="495" y="150" text-anchor="middle" class="box-text">企业微信群</text>
+  <text x="495" y="160" text-anchor="middle" class="box-text">零学习成本</text>
   
   <!-- API接口 -->
   <rect x="590" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
@@ -180,7 +181,7 @@
   <!-- 图例 -->
   <rect x="50" y="720" width="1100" height="60" fill="#f5f5f5" stroke="#ccc" rx="5"/>
   <text x="60" y="740" class="subtitle">架构特点：</text>
-  <text x="60" y="755" class="subtitle">• 多元化入口：6种上传方式，适应不同用户习惯</text>
+  <text x="60" y="755" class="subtitle">• 多元化入口：7种上传方式，包含多平台群机器人</text>
   <text x="60" y="770" class="subtitle">• 智能处理：AI+人工双重审核，保证内容质量</text>
   
   <text x="400" y="755" class="subtitle">• 统一管理：最终落地GitHub，版本控制</text>
