@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 12px; fill: #666; }
+      .layer-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #fff; }
+      .box-text { font-family: Arial, sans-serif; font-size: 10px; fill: #333; }
+      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .layer1 { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+      .layer2 { fill: #f3e5f5; stroke: #7b1fa2; stroke-width: 2; }
+      .layer3 { fill: #e8f5e8; stroke: #388e3c; stroke-width: 2; }
+      .layer4 { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; }
+      .layer5 { fill: #fce4ec; stroke: #c2185b; stroke-width: 2; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+  
+  <!-- 标题 -->
+  <text x="600" y="30" text-anchor="middle" class="title">知识库多元化上传架构图</text>
+  
+  <!-- 第一层：前端上传层 -->
+  <rect x="50" y="60" width="1100" height="120" class="layer1" rx="10"/>
+  <rect x="60" y="70" width="200" height="30" fill="#1976d2" rx="5"/>
+  <text x="160" y="90" text-anchor="middle" class="layer-title">前端上传层</text>
+  
+  <!-- Web界面 -->
+  <rect x="80" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="155" y="125" text-anchor="middle" class="box-text">Web界面上传</text>
+  <text x="155" y="135" text-anchor="middle" class="box-text">拖拽上传</text>
+  <text x="155" y="145" text-anchor="middle" class="box-text">可视化操作</text>
+  <text x="155" y="155" text-anchor="middle" class="box-text">零技术门槛</text>
+  
+  <!-- 邮件上传 -->
+  <rect x="250" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="325" y="125" text-anchor="middle" class="box-text">邮件上传</text>
+  <text x="325" y="135" text-anchor="middle" class="box-text">附件解析</text>
+  <text x="325" y="145" text-anchor="middle" class="box-text">自动处理</text>
+  <text x="325" y="155" text-anchor="middle" class="box-text">用户习惯度高</text>
+  
+  <!-- 微信小程序 -->
+  <rect x="420" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="495" y="125" text-anchor="middle" class="box-text">微信小程序</text>
+  <text x="495" y="135" text-anchor="middle" class="box-text">移动上传</text>
+  <text x="495" y="145" text-anchor="middle" class="box-text">语音转文字</text>
+  <text x="495" y="155" text-anchor="middle" class="box-text">用户基数大</text>
+  
+  <!-- API接口 -->
+  <rect x="590" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="665" y="125" text-anchor="middle" class="box-text">API接口</text>
+  <text x="665" y="135" text-anchor="middle" class="box-text">批量上传</text>
+  <text x="665" y="145" text-anchor="middle" class="box-text">系统集成</text>
+  <text x="665" y="155" text-anchor="middle" class="box-text">可编程</text>
+  
+  <!-- 桌面客户端 -->
+  <rect x="760" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="835" y="125" text-anchor="middle" class="box-text">桌面客户端</text>
+  <text x="835" y="135" text-anchor="middle" class="box-text">文件夹监控</text>
+  <text x="835" y="145" text-anchor="middle" class="box-text">离线缓存</text>
+  <text x="835" y="155" text-anchor="middle" class="box-text">功能强大</text>
+  
+  <!-- 浏览器插件 -->
+  <rect x="930" y="110" width="150" height="50" fill="#fff" stroke="#1976d2" rx="5"/>
+  <text x="1005" y="125" text-anchor="middle" class="box-text">浏览器插件</text>
+  <text x="1005" y="135" text-anchor="middle" class="box-text">网页保存</text>
+  <text x="1005" y="145" text-anchor="middle" class="box-text">截图上传</text>
+  <text x="1005" y="155" text-anchor="middle" class="box-text">无缝集成</text>
+  
+  <!-- 箭头从前端层到负载均衡 -->
+  <line x1="600" y1="180" x2="600" y2="210" class="arrow"/>
+  
+  <!-- 第二层：负载均衡/API网关 -->
+  <rect x="400" y="220" width="400" height="40" class="layer2" rx="10"/>
+  <text x="600" y="245" text-anchor="middle" class="layer-title">负载均衡/API网关 (Nginx/Kong)</text>
+  
+  <!-- 箭头到应用服务层 -->
+  <line x1="600" y1="260" x2="600" y2="290" class="arrow"/>
+  
+  <!-- 第三层：应用服务层 -->
+  <rect x="50" y="300" width="1100" height="120" class="layer3" rx="10"/>
+  <rect x="60" y="310" width="200" height="30" fill="#388e3c" rx="5"/>
+  <text x="160" y="330" text-anchor="middle" class="layer-title">应用服务层</text>
+  
+  <!-- 上传服务 -->
+  <rect x="100" y="350" width="180" height="50" fill="#fff" stroke="#388e3c" rx="5"/>
+  <text x="190" y="365" text-anchor="middle" class="box-text">上传服务</text>
+  <text x="190" y="375" text-anchor="middle" class="box-text">文件接收</text>
+  <text x="190" y="385" text-anchor="middle" class="box-text">格式验证</text>
+  <text x="190" y="395" text-anchor="middle" class="box-text">临时存储</text>
+  
+  <!-- AI处理服务 -->
+  <rect x="300" y="350" width="180" height="50" fill="#fff" stroke="#388e3c" rx="5"/>
+  <text x="390" y="365" text-anchor="middle" class="box-text">AI处理服务</text>
+  <text x="390" y="375" text-anchor="middle" class="box-text">内容分析</text>
+  <text x="390" y="385" text-anchor="middle" class="box-text">自动分类</text>
+  <text x="390" y="395" text-anchor="middle" class="box-text">质量评估</text>
+  
+  <!-- 审核服务 -->
+  <rect x="500" y="350" width="180" height="50" fill="#fff" stroke="#388e3c" rx="5"/>
+  <text x="590" y="365" text-anchor="middle" class="box-text">审核服务</text>
+  <text x="590" y="375" text-anchor="middle" class="box-text">人工审核</text>
+  <text x="590" y="385" text-anchor="middle" class="box-text">工作流管理</text>
+  <text x="590" y="395" text-anchor="middle" class="box-text">专家评估</text>
+  
+  <!-- 通知服务 -->
+  <rect x="700" y="350" width="180" height="50" fill="#fff" stroke="#388e3c" rx="5"/>
+  <text x="790" y="365" text-anchor="middle" class="box-text">通知服务</text>
+  <text x="790" y="375" text-anchor="middle" class="box-text">状态通知</text>
+  <text x="790" y="385" text-anchor="middle" class="box-text">邮件推送</text>
+  <text x="790" y="395" text-anchor="middle" class="box-text">消息提醒</text>
+  
+  <!-- 同步服务 -->
+  <rect x="900" y="350" width="180" height="50" fill="#fff" stroke="#388e3c" rx="5"/>
+  <text x="990" y="365" text-anchor="middle" class="box-text">同步服务</text>
+  <text x="990" y="375" text-anchor="middle" class="box-text">GitHub API</text>
+  <text x="990" y="385" text-anchor="middle" class="box-text">版本控制</text>
+  <text x="990" y="395" text-anchor="middle" class="box-text">自动同步</text>
+  
+  <!-- 箭头到数据存储层 -->
+  <line x1="600" y1="420" x2="600" y2="450" class="arrow"/>
+  
+  <!-- 第四层：数据存储层 -->
+  <rect x="50" y="460" width="1100" height="120" class="layer4" rx="10"/>
+  <rect x="60" y="470" width="200" height="30" fill="#f57c00" rx="5"/>
+  <text x="160" y="490" text-anchor="middle" class="layer-title">数据存储层</text>
+  
+  <!-- PostgreSQL -->
+  <rect x="100" y="510" width="200" height="50" fill="#fff" stroke="#f57c00" rx="5"/>
+  <text x="200" y="525" text-anchor="middle" class="box-text">PostgreSQL</text>
+  <text x="200" y="535" text-anchor="middle" class="box-text">元数据存储</text>
+  <text x="200" y="545" text-anchor="middle" class="box-text">用户/审核记录</text>
+  <text x="200" y="555" text-anchor="middle" class="box-text">事务支持</text>
+  
+  <!-- Redis -->
+  <rect x="320" y="510" width="200" height="50" fill="#fff" stroke="#f57c00" rx="5"/>
+  <text x="420" y="525" text-anchor="middle" class="box-text">Redis</text>
+  <text x="420" y="535" text-anchor="middle" class="box-text">缓存/队列</text>
+  <text x="420" y="545" text-anchor="middle" class="box-text">会话管理</text>
+  <text x="420" y="555" text-anchor="middle" class="box-text">高性能读写</text>
+  
+  <!-- Elasticsearch -->
+  <rect x="540" y="510" width="200" height="50" fill="#fff" stroke="#f57c00" rx="5"/>
+  <text x="640" y="525" text-anchor="middle" class="box-text">Elasticsearch</text>
+  <text x="640" y="535" text-anchor="middle" class="box-text">搜索引擎</text>
+  <text x="640" y="545" text-anchor="middle" class="box-text">全文检索</text>
+  <text x="640" y="555" text-anchor="middle" class="box-text">智能推荐</text>
+  
+  <!-- 文件存储 -->
+  <rect x="760" y="510" width="200" height="50" fill="#fff" stroke="#f57c00" rx="5"/>
+  <text x="860" y="525" text-anchor="middle" class="box-text">云存储</text>
+  <text x="860" y="535" text-anchor="middle" class="box-text">OSS/COS/S3</text>
+  <text x="860" y="545" text-anchor="middle" class="box-text">CDN加速</text>
+  <text x="860" y="555" text-anchor="middle" class="box-text">多地域备份</text>
+  
+  <!-- 箭头到GitHub同步层 -->
+  <line x1="600" y1="580" x2="600" y2="610" class="arrow"/>
+  
+  <!-- 第五层：GitHub同步层 -->
+  <rect x="300" y="620" width="600" height="80" class="layer5" rx="10"/>
+  <rect x="310" y="630" width="200" height="30" fill="#c2185b" rx="5"/>
+  <text x="410" y="650" text-anchor="middle" class="layer-title">GitHub同步层</text>
+  
+  <rect x="400" y="670" width="400" height="20" fill="#fff" stroke="#c2185b" rx="5"/>
+  <text x="600" y="685" text-anchor="middle" class="box-text">Git API + Git LFS + 版本控制 + 公开访问</text>
+  
+  <!-- 数据流箭头 -->
+  <g stroke="#999" stroke-width="1" fill="none" stroke-dasharray="3,3">
+    <!-- 从上传服务到AI处理 -->
+    <line x1="280" y1="375" x2="300" y2="375"/>
+    <!-- 从AI处理到审核 -->
+    <line x1="480" y1="375" x2="500" y2="375"/>
+    <!-- 从审核到通知 -->
+    <line x1="680" y1="375" x2="700" y2="375"/>
+    <!-- 从审核到同步 -->
+    <line x1="680" y1="375" x2="900" y2="375"/>
+  </g>
+  
+  <!-- 图例 -->
+  <rect x="50" y="720" width="1100" height="60" fill="#f5f5f5" stroke="#ccc" rx="5"/>
+  <text x="60" y="740" class="subtitle">架构特点：</text>
+  <text x="60" y="755" class="subtitle">• 多元化入口：6种上传方式，适应不同用户习惯</text>
+  <text x="60" y="770" class="subtitle">• 智能处理：AI+人工双重审核，保证内容质量</text>
+  
+  <text x="400" y="755" class="subtitle">• 统一管理：最终落地GitHub，版本控制</text>
+  <text x="400" y="770" class="subtitle">• 可扩展：微服务架构，支持水平扩展</text>
+  
+  <text x="700" y="755" class="subtitle">• 高可用：多层存储，云服务支撑</text>
+  <text x="700" y="770" class="subtitle">• 成本可控：合理技术选型，运营成本优化</text>
+</svg>
