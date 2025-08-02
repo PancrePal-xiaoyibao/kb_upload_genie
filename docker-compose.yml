@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: kb_postgres
+    environment:
+      POSTGRES_DB: kb_upload_genie
+      POSTGRES_USER: kb_user
+      POSTGRES_PASSWORD: kb_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - kb_network
+    restart: unless-stopped
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: kb_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kb_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kb_backend
+    environment:
+      - DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/kb_upload_genie
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-change-in-production
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - kb_network
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery 异步任务处理
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kb_celery
+    environment:
+      - DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/kb_upload_genie
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-change-in-production
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - kb_network
+    restart: unless-stopped
+    command: celery -A app.celery worker --loglevel=info
+
+  # Celery Flower 监控
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kb_flower
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    networks:
+      - kb_network
+    restart: unless-stopped
+    command: celery -A app.celery flower --port=5555
+
+  # 前端开发服务器
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: kb_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    networks:
+      - kb_network
+    restart: unless-stopped
+
+  # Nginx 反向代理 (生产环境)
+  nginx:
+    image: nginx:alpine
+    container_name: kb_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - kb_network
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kb_network:
+    driver: bridge
