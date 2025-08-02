@@ -65,7 +65,12 @@ async def upload_file(file: UploadFile = File(...)):
     """
     try:
         # 检查文件大小
-        if file.size and file.size > settings.MAX_FILE_SIZE:
+        # 注意：FastAPI的UploadFile没有直接的size属性，需要读取文件内容来确定大小
+        file_content = await file.read()
+        file_size = len(file_content)
+        await file.seek(0)  # 重置文件指针位置
+        
+        if file_size > settings.MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=413,
                 detail=f"文件大小超过限制 ({settings.MAX_FILE_SIZE / 1024 / 1024:.1f}MB)"
