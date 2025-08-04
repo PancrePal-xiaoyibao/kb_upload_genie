@@ -6,6 +6,7 @@ interface TurnstileComponentProps {
   onVerify: (token: string) => void
   onError?: (error: string) => void
   onExpire?: () => void
+  onWidgetLoad?: (widgetId: string) => void
   className?: string
 }
 
@@ -17,6 +18,7 @@ const TurnstileComponent: React.FC<TurnstileComponentProps> = ({
   onVerify,
   onError,
   onExpire,
+  onWidgetLoad,
   className
 }) => {
   const turnstileRef = useRef<any>(null)
@@ -79,6 +81,10 @@ const TurnstileComponent: React.FC<TurnstileComponentProps> = ({
         onExpire={() => {
           console.warn('Turnstile expired')
           onExpire?.()
+        }}
+        onWidgetLoad={(widgetId) => {
+          console.log('Turnstile widget loaded:', widgetId)
+          onWidgetLoad?.(widgetId)
         }}
         options={{
           theme: 'light',

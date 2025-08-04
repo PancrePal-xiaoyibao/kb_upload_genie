@@ -102,6 +102,11 @@ const Upload: React.FC = () => {
     message.warning('安全验证已过期，请重新验证')
   }
 
+  const handleTurnstileWidgetLoad = (widgetId: string) => {
+    console.log('Turnstile组件加载完成:', widgetId)
+    setTurnstileLoading(false)
+  }
+
   // 开始验证流程
   const startTurnstileVerification = () => {
     setShowTurnstileModal(true)
@@ -363,6 +368,7 @@ const Upload: React.FC = () => {
               onVerify={handleTurnstileVerify}
               onError={handleTurnstileError}
               onExpire={handleTurnstileExpire}
+              onWidgetLoad={handleTurnstileWidgetLoad}
               className="turnstile-container"
             />
           )}
