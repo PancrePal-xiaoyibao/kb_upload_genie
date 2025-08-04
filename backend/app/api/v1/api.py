@@ -18,6 +18,8 @@ from app.core.turnstile import verify_turnstile
 from app.api.v1.email_upload import router as email_upload_router
 from app.api.v1.email_upload_enhanced import router as email_upload_enhanced_router
 from app.api.v1.email_config import router as email_config_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.admin import router as admin_router
 
 # 创建API路由器
 api_router = APIRouter()
@@ -39,6 +41,16 @@ api_router.include_router(
     email_config_router,
     prefix="/email-config",
     tags=["邮件配置管理"]
+)
+
+api_router.include_router(
+    auth_router,
+    tags=["认证"]
+)
+
+api_router.include_router(
+    admin_router,
+    tags=["管理员"]
 )
 
 # 基本健康检查端点

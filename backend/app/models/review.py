@@ -51,8 +51,8 @@ class Review(Base):
         index=True,
         comment="文章ID"
     )
-    reviewer_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
+    reviewer_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
         ForeignKey("users.id", ondelete="SET NULL"),
         comment="审核员ID"
     )

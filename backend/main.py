@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
 from app.tasks.email_tasks import email_task_manager
+from app.core.init_admin import init_admin
 
 # 配置日志
 logging.basicConfig(
@@ -35,6 +36,13 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     
     logger.info("数据库初始化完成")
+    
+    # 初始化管理员用户
+    try:
+        await init_admin()
+        logger.info("管理员用户初始化完成")
+    except Exception as e:
+        logger.error(f"管理员用户初始化失败: {str(e)}")
     
     # 启动邮件检查任务
     if settings.EMAIL_UPLOAD_ENABLED:
