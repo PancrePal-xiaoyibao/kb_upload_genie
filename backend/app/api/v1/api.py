@@ -14,8 +14,32 @@ from datetime import datetime
 from app.core.config import settings
 from app.core.turnstile import verify_turnstile
 
+# 导入子路由
+from app.api.v1.email_upload import router as email_upload_router
+from app.api.v1.email_upload_enhanced import router as email_upload_enhanced_router
+from app.api.v1.email_config import router as email_config_router
+
 # 创建API路由器
 api_router = APIRouter()
+
+# 注册子路由
+api_router.include_router(
+    email_upload_router,
+    prefix="/email-upload",
+    tags=["邮件上传"]
+)
+
+api_router.include_router(
+    email_upload_enhanced_router,
+    prefix="/email-upload-enhanced",
+    tags=["邮件上传增强版"]
+)
+
+api_router.include_router(
+    email_config_router,
+    prefix="/email-config",
+    tags=["邮件配置管理"]
+)
 
 # 基本健康检查端点
 @api_router.get("/health")

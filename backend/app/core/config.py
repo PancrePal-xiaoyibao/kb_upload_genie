@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
     
+    # API认证配置
+    API_TOKEN: str = Field(default="admin_token_change_in_production")
+    
     # AI服务配置
     OPENAI_API_KEY: Optional[str] = Field(default=None)
     OPENAI_BASE_URL: Optional[str] = Field(default=None)
@@ -84,6 +87,63 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: Optional[str] = Field(default=None)
     SMTP_TLS: bool = Field(default=True)
     
+    # 邮件上传功能配置
+    EMAIL_UPLOAD_ENABLED: bool = Field(default=True, description="是否启用邮件上传功能")
+    
+    # 系统邮件过滤配置
+    EMAIL_SYSTEM_SENDERS: Union[str, List[str]] = Field(
+        default="mailer-daemon@,noreply@,no-reply@,donotreply@,do-not-reply@,postmaster@,bounce@,bounces@,system@,admin@,administrator@",
+        description="要跳过的系统邮件发送者前缀列表"
+    )
+    
+    # IMAP配置（用于接收邮件）
+    IMAP_HOST: Optional[str] = Field(default=None, description="IMAP服务器地址")
+    IMAP_PORT: int = Field(default=993, description="IMAP端口")
+    IMAP_USER: Optional[str] = Field(default=None, description="IMAP用户名")
+    IMAP_PASSWORD: Optional[str] = Field(default=None, description="IMAP密码")
+    IMAP_USE_SSL: bool = Field(default=True, description="是否使用SSL")
+    IMAP_MAILBOX: str = Field(default="INBOX", description="邮箱文件夹")
+    
+    # 邮件检查配置
+    EMAIL_CHECK_INTERVAL: int = Field(default=15, description="邮件检查间隔（秒）")
+    EMAIL_MARK_AS_READ: bool = Field(default=True, description="处理后是否标记为已读")
+    
+    # 附件限制配置
+    EMAIL_MAX_ATTACHMENT_SIZE: int = Field(default=10 * 1024 * 1024, description="单个附件最大大小（字节）")
+    EMAIL_MAX_ATTACHMENT_COUNT: int = Field(default=5, description="每封邮件最大附件数量")
+    EMAIL_ALLOWED_EXTENSIONS: Union[str, List[str]] = Field(
+        default=".pdf,.doc,.docx,.txt,.md,.zip,.rar",
+        description="允许的附件扩展名"
+    )
+    
+    # 频率限制配置
+    EMAIL_HOURLY_LIMIT: int = Field(default=5, description="每小时邮件发送限制")
+    EMAIL_DAILY_LIMIT: int = Field(default=20, description="每天邮件发送限制")
+    
+    # 域名限制配置
+    EMAIL_DOMAIN_WHITELIST_ENABLED: bool = Field(default=False, description="是否启用域名白名单")
+    EMAIL_ALLOWED_DOMAINS: Union[str, List[str]] = Field(
+        default="gmail.com,outlook.com,qq.com,163.com",
+        description="允许的邮件域名"
+    )
+    
+    # 兼容旧的环境变量名
+    ALLOWED_EMAIL_DOMAINS: Union[str, List[str]] = Field(
+        default="gmail.com,outlook.com,qq.com,163.com",
+        description="允许的邮件域名（兼容字段）"
+    )
+    MAX_EMAIL_ATTACHMENTS: int = Field(default=5, description="每封邮件最大附件数量（兼容字段）")
+    MAX_ATTACHMENT_SIZE: int = Field(default=10 * 1024 * 1024, description="单个附件最大大小（兼容字段）")
+    EMAIL_RATE_LIMIT_HOURLY: int = Field(default=5, description="每小时邮件发送限制（兼容字段）")
+    EMAIL_RATE_LIMIT_DAILY: int = Field(default=20, description="每天邮件发送限制（兼容字段）")
+    
+    # Redis配置（用于频率限制）
+    REDIS_URL: Optional[str] = Field(default=None, description="Redis连接URL")
+    REDIS_HOST: str = Field(default="localhost", description="Redis主机")
+    REDIS_PORT: int = Field(default=6379, description="Redis端口")
+    REDIS_DB: int = Field(default=0, description="Redis数据库")
+    REDIS_PASSWORD: Optional[str] = Field(default=None, description="Redis密码")
+    
     # 日志配置
     LOG_LEVEL: str = Field(default="INFO")
     LOG_FILE: Optional[str] = Field(default=None)
@@ -112,12 +172,32 @@ class Settings(BaseSettings):
             return info.data.get("SECRET_KEY", "")
         return v
     
+    @field_validator("EMAIL_ALLOWED_EXTENSIONS", mode="before")
+    @classmethod
+    def parse_email_allowed_extensions(cls, v):
+        """解析允许的邮件附件扩展名列表"""
+        if isinstance(v, str):
+            return [ext.strip() for ext in v.split(",")]
+        return v
+    
+    @field_validator("EMAIL_ALLOWED_DOMAINS", mode="before")
+    @classmethod
+    def parse_email_allowed_domains(cls, v):
+        """解析允许的邮件域名列表"""
+        if isinstance(v, str):
+            return [domain.strip() for domain in v.split(",")]
+        return v
+    
+    # Redis启用标志
+    REDIS_ENABLED: bool = Field(default=True, description="是否启用Redis")
+    
     # 移除了Celery相关的验证器，因为我们不再使用Celery
     
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "allow"  # 允许额外的字段
 
 
 # 创建设置实例

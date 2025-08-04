@@ -14,6 +14,7 @@ import logging
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
+from app.tasks.email_tasks import email_task_manager
 
 # 配置日志
 logging.basicConfig(
@@ -34,12 +35,25 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     
     logger.info("数据库初始化完成")
+    
+    # 启动邮件检查任务
+    if settings.EMAIL_UPLOAD_ENABLED:
+        await email_task_manager.start_email_checking()
+        logger.info("邮件检查任务已启动")
+    else:
+        logger.info("邮件上传功能未启用，跳过邮件检查任务")
+    
     logger.info("KB Upload Genie 后端服务启动成功!")
     
     yield
     
     # 关闭时执行
     logger.info("正在关闭 KB Upload Genie 后端服务...")
+    
+    # 停止邮件检查任务
+    if settings.EMAIL_UPLOAD_ENABLED:
+        await email_task_manager.stop_email_checking()
+        logger.info("邮件检查任务已停止")
 
 
 # 创建FastAPI应用实例
