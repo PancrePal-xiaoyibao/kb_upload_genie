@@ -17,15 +17,18 @@ from app.core.config import settings
 from app.services.email_service import email_service
 from app.services.redis_service import redis_service
 from app.services.notification_service import notification_service
+from app.api.deps import get_admin_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 @router.get("/config")
-async def get_email_config():
+async def get_email_config(
+    current_user: dict = Depends(get_admin_user)
+):
     """
     获取当前邮件配置
+    需要管理员权限
     """
     try:
         config = {
@@ -82,10 +85,13 @@ async def get_email_config():
         raise HTTPException(status_code=500, detail=f"获取配置失败: {str(e)}")
 
 
-@router.post("/config/test-connection")
-async def test_email_connection():
+@router.post("/test-connection")
+async def test_email_connection(
+    current_user: dict = Depends(get_admin_user)
+):
     """
     测试邮件服务连接
+    需要管理员权限
     """
     try:
         results = {
@@ -144,135 +150,14 @@ async def test_email_connection():
         raise HTTPException(status_code=500, detail=f"连接测试失败: {str(e)}")
 
 
-@router.get("/config/database")
-async def get_database_config(
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    获取数据库中的邮件配置
-    """
-    try:
-        stmt = select(EmailConfig)
-        result = await db.execute(stmt)
-        configs = result.scalars().all()
-        
-        config_dict = {}
-        for config in configs:
-            value = config.config_value
-            
-            # 根据类型转换值
-            if config.config_type == "int":
-                value = int(value)
-            elif config.config_type == "bool":
-                value = value.lower() in ("true", "1", "yes")
-            elif config.config_type == "json":
-                try:
-                    value = json.loads(value)
-                except json.JSONDecodeError:
-                    value = config.config_value
-            
-            config_dict[config.config_key] = {
-                "value": value,
-                "type": config.config_type,
-                "description": config.description,
-                "is_encrypted": config.is_encrypted,
-                "updated_at": config.updated_at.isoformat()
-            }
-        
-        return {
-            "success": True,
-            "data": config_dict
-        }
-        
-    except Exception as e:
-        logger.error(f"获取数据库配置失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取数据库配置失败: {str(e)}")
-
-
-@router.post("/config/database")
-async def update_database_config(
-    config_key: str = Form(..., description="配置键名"),
-    config_value: str = Form(..., description="配置值"),
-    config_type: str = Form("string", description="配置类型"),
-    description: Optional[str] = Form(None, description="配置描述"),
-    is_encrypted: bool = Form(False, description="是否加密"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    更新数据库中的邮件配置
-    """
-    try:
-        # 查找现有配置
-        stmt = select(EmailConfig).where(EmailConfig.config_key == config_key)
-        result = await db.execute(stmt)
-        existing_config = result.scalar_one_or_none()
-        
-        if existing_config:
-            # 更新现有配置
-            existing_config.config_value = config_value
-            existing_config.config_type = config_type
-            existing_config.description = description
-            existing_config.is_encrypted = is_encrypted
-            existing_config.updated_at = datetime.now()
-        else:
-            # 创建新配置
-            new_config = EmailConfig(
-                config_key=config_key,
-                config_value=config_value,
-                config_type=config_type,
-                description=description,
-                is_encrypted=is_encrypted
-            )
-            db.add(new_config)
-        
-        await db.commit()
-        
-        return {
-            "success": True,
-            "message": f"配置 {config_key} 更新成功"
-        }
-        
-    except Exception as e:
-        logger.error(f"更新数据库配置失败: {e}")
-        await db.rollback()
-        raise HTTPException(status_code=500, detail=f"更新配置失败: {str(e)}")
-
-
-@router.delete("/config/database/{config_key}")
-async def delete_database_config(
-    config_key: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    删除数据库中的邮件配置
-    """
-    try:
-        stmt = delete(EmailConfig).where(EmailConfig.config_key == config_key)
-        result = await db.execute(stmt)
-        
-        if result.rowcount > 0:
-            await db.commit()
-            return {
-                "success": True,
-                "message": f"配置 {config_key} 删除成功"
-            }
-        else:
-            raise HTTPException(status_code=404, detail=f"配置 {config_key} 不存在")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"删除数据库配置失败: {e}")
-        await db.rollback()
-        raise HTTPException(status_code=500, detail=f"删除配置失败: {str(e)}")
-
-
 @router.get("/attachment-rules")
 async def get_attachment_rules(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     获取附件规则配置
+    需要管理员权限
     """
     try:
         stmt = select(AttachmentRule).where(AttachmentRule.is_active == True)
@@ -326,10 +211,12 @@ async def create_attachment_rule(
     max_file_count: int = Form(..., description="最大文件数量"),
     allowed_extensions: Optional[str] = Form(None, description="允许的扩展名（JSON数组）"),
     blocked_extensions: Optional[str] = Form(None, description="禁止的扩展名（JSON数组）"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     创建附件规则
+    需要管理员权限
     """
     try:
         # 验证JSON格式
@@ -389,10 +276,12 @@ async def update_attachment_rule(
     allowed_extensions: Optional[str] = Form(None, description="允许的扩展名（JSON数组）"),
     blocked_extensions: Optional[str] = Form(None, description="禁止的扩展名（JSON数组）"),
     is_active: Optional[bool] = Form(None, description="是否启用"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     更新附件规则
+    需要管理员权限
     """
     try:
         # 查找规则
@@ -450,10 +339,12 @@ async def update_attachment_rule(
 @router.delete("/attachment-rules/{rule_id}")
 async def delete_attachment_rule(
     rule_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     删除附件规则
+    需要管理员权限
     """
     try:
         stmt = select(AttachmentRule).where(AttachmentRule.id == rule_id)
@@ -480,9 +371,12 @@ async def delete_attachment_rule(
 
 
 @router.get("/system-status")
-async def get_system_status():
+async def get_system_status(
+    current_user: dict = Depends(get_admin_user)
+):
     """
     获取邮件系统状态
+    需要管理员权限
     """
     try:
         # 检查各个组件状态
@@ -551,9 +445,12 @@ async def get_system_status():
 
 
 @router.post("/system/restart-services")
-async def restart_email_services():
+async def restart_email_services(
+    current_user: dict = Depends(get_admin_user)
+):
     """
     重启邮件服务
+    需要管理员权限
     """
     try:
         # 断开现有连接
@@ -584,9 +481,12 @@ async def restart_email_services():
 
 
 @router.post("/system/clear-cache")
-async def clear_system_cache():
+async def clear_system_cache(
+    current_user: dict = Depends(get_admin_user)
+):
     """
     清理系统缓存
+    需要管理员权限
     """
     try:
         # 清理域名缓存
@@ -606,10 +506,12 @@ async def clear_system_cache():
 @router.get("/logs/recent")
 async def get_recent_logs(
     lines: int = 100,
-    level: str = "INFO"
+    level: str = "INFO",
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     获取最近的系统日志
+    需要管理员权限
     """
     try:
         # 这里可以实现日志读取逻辑
