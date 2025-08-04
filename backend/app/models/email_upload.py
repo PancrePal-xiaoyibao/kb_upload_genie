@@ -33,11 +33,17 @@ class EmailUpload(Base):
         comment="主键ID"
     )
     
-    # 邮件信息（加密存储）
+    # 邮件信息
     sender_email_hash: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
         comment="发送者邮箱哈希值"
+    )
+    
+    sender_email: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="发送者邮箱原始地址"
     )
     
     # 文件信息

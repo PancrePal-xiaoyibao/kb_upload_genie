@@ -436,6 +436,7 @@ class EmailService:
                 for attachment in record['attachments']:
                     email_upload = EmailUpload(
                         sender_email_hash=record['sender_email_hash'],
+                        sender_email=record['sender_email'],  # 存储原始邮箱
                         original_filename=attachment['original_filename'],
                         stored_filename=attachment['stored_filename'],
                         file_size=attachment['file_size'],

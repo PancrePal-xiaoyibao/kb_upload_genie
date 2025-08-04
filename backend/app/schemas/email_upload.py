@@ -30,9 +30,32 @@ class EmailUploadResponse(BaseModel):
         from_attributes = True
 
 
+class EmailUploadPublicResponse(BaseModel):
+    """邮件上传公开响应模型（脱敏版本）"""
+    id: str = Field(..., description="上传记录ID")
+    sender_email_masked: str = Field(..., description="发送者邮箱（脱敏）")
+    original_filename: str = Field(..., description="原始文件名")
+    file_size: int = Field(..., description="文件大小（字节）")
+    file_type: str = Field(..., description="文件类型")
+    email_subject: Optional[str] = Field(None, description="邮件主题")
+    status: EmailUploadStatus = Field(..., description="处理状态")
+    received_at: datetime = Field(..., description="接收时间")
+    processed_at: Optional[datetime] = Field(None, description="处理时间")
+    review_comment: Optional[str] = Field(None, description="审核备注（仅拒绝状态显示）")
+
+
 class EmailUploadListResponse(BaseModel):
     """邮件上传列表响应模型"""
     items: List[EmailUploadResponse] = Field(..., description="上传记录列表")
+    total: int = Field(..., description="总记录数")
+    page: int = Field(..., description="当前页码")
+    size: int = Field(..., description="每页大小")
+    pages: int = Field(..., description="总页数")
+
+
+class EmailUploadPublicListResponse(BaseModel):
+    """邮件上传公开列表响应模型"""
+    items: List[EmailUploadPublicResponse] = Field(..., description="上传记录列表")
     total: int = Field(..., description="总记录数")
     page: int = Field(..., description="当前页码")
     size: int = Field(..., description="每页大小")

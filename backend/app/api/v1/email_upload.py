@@ -14,15 +14,14 @@ from app.models.email_upload import EmailUpload, EmailUploadStatus
 from app.schemas.email_upload import (
     EmailUploadResponse,
     EmailUploadListResponse,
+    EmailUploadPublicResponse,
+    EmailUploadPublicListResponse,
     EmailUploadStatsResponse
 )
+from app.utils.email_utils import mask_email
+from app.api.deps import get_admin_user
 
 router = APIRouter()
-
-
-def get_current_user():
-    """临时的用户认证函数"""
-    return {"user_id": "admin", "role": "admin"}
 
 
 @router.get("/uploads", response_model=EmailUploadListResponse)
@@ -33,14 +32,12 @@ async def get_email_uploads(
     start_date: Optional[datetime] = Query(None, description="开始日期"),
     end_date: Optional[datetime] = Query(None, description="结束日期"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     获取邮件上传文件列表
     需要管理员权限
     """
-    if not current_user or current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="权限不足")
     
     # 构建查询条件
     conditions = []
@@ -77,6 +74,7 @@ async def get_email_uploads(
             file_size=upload.file_size,
             file_type=upload.file_type,
             email_subject=upload.email_subject,
+            sender_email=upload.sender_email,  # 管理员可以看到真实邮箱
             status=upload.status,
             received_at=upload.received_at,
             processed_at=upload.processed_at,
@@ -96,15 +94,12 @@ async def get_email_uploads(
 async def get_email_upload(
     upload_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     获取单个邮件上传文件详情
     需要管理员权限
     """
-    if not current_user:
-        raise HTTPException(status_code=403, detail="权限不足")
-    
     stmt = select(EmailUpload).where(EmailUpload.id == upload_id)
     result = await db.execute(stmt)
     upload = result.scalar_one_or_none()
@@ -119,6 +114,7 @@ async def get_email_upload(
         file_type=upload.file_type,
         email_subject=upload.email_subject,
         email_body=upload.email_body,
+        sender_email=upload.sender_email,  # 管理员可以看到真实邮箱
         status=upload.status,
         received_at=upload.received_at,
         processed_at=upload.processed_at,
@@ -134,15 +130,12 @@ async def update_upload_status(
     status: EmailUploadStatus,
     comment: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     更新邮件上传文件状态
     需要管理员权限
     """
-    if not current_user:
-        raise HTTPException(status_code=403, detail="权限不足")
-    
     stmt = select(EmailUpload).where(EmailUpload.id == upload_id)
     result = await db.execute(stmt)
     upload = result.scalar_one_or_none()
@@ -166,14 +159,12 @@ async def update_upload_status(
 async def get_email_upload_stats(
     days: int = Query(7, ge=1, le=365, description="统计天数"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     获取邮件上传统计信息
     需要管理员权限
     """
-    if not current_user:
-        raise HTTPException(status_code=403, detail="权限不足")
     
     start_date = datetime.utcnow() - timedelta(days=days)
     
@@ -232,7 +223,7 @@ async def get_email_upload_stats(
     )
 
 
-@router.get("/public/uploads", response_model=EmailUploadListResponse)
+@router.get("/public/uploads", response_model=EmailUploadPublicListResponse)
 async def get_public_email_uploads(
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -241,16 +232,13 @@ async def get_public_email_uploads(
     """
     获取公开的邮件上传文件列表（不显示敏感信息）
     无需认证，用于展示上传的文件
+    显示所有状态的文件，但对用户邮箱进行脱敏处理
     """
-    # 只显示已通过审核的文件
-    stmt = select(EmailUpload).where(
-        EmailUpload.status == EmailUploadStatus.APPROVED
-    ).order_by(EmailUpload.received_at.desc())
+    # 显示所有状态的文件
+    stmt = select(EmailUpload).order_by(EmailUpload.received_at.desc())
     
     # 查询总数
-    count_stmt = select(func.count(EmailUpload.id)).where(
-        EmailUpload.status == EmailUploadStatus.APPROVED
-    )
+    count_stmt = select(func.count(EmailUpload.id))
     count_result = await db.execute(count_stmt)
     total = count_result.scalar()
     
@@ -262,19 +250,23 @@ async def get_public_email_uploads(
     # 转换为公开响应格式（隐藏敏感信息）
     items = []
     for upload in uploads:
-        items.append(EmailUploadResponse(
+        # 对邮箱进行脱敏处理
+        masked_email = mask_email(upload.sender_email) if upload.sender_email else "匿名用户"
+        
+        items.append(EmailUploadPublicResponse(
             id=upload.id,
             original_filename=upload.original_filename,
             file_size=upload.file_size,
             file_type=upload.file_type,
             email_subject=upload.email_subject,
+            sender_email_masked=masked_email,
             status=upload.status,
             received_at=upload.received_at,
             processed_at=upload.processed_at,
-            # 不显示邮箱哈希、审核员信息等敏感数据
+            review_comment=upload.review_comment if upload.status == EmailUploadStatus.REJECTED else None,  # 只有被拒绝时才显示原因
         ))
     
-    return EmailUploadListResponse(
+    return EmailUploadPublicListResponse(
         items=items,
         total=total,
         page=page,
