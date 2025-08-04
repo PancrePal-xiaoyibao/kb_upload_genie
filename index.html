@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 为Turnstile和开发环境配置CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://js.hcaptcha.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https://challenges.cloudflare.com https://hcaptcha.com; frame-src 'self' https://challenges.cloudflare.com https://hcaptcha.com;">
     <title>KB Upload Genie - GitHub上传分类智能前端</title>
   </head>
   <body>

@@ -2,9 +2,9 @@
 API v1 主路由
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form, Request
 from fastapi.responses import JSONResponse
-from typing import List
+from typing import List, Optional
 import os
 import shutil
 from pathlib import Path
@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime
 
 from app.core.config import settings
+from app.core.turnstile import verify_turnstile
 
 # 创建API路由器
 api_router = APIRouter()
@@ -24,6 +25,15 @@ async def api_health():
         "status": "healthy",
         "api_version": "v1",
         "message": "KB Upload Genie API v1 is running"
+    }
+
+# Turnstile配置端点
+@api_router.get("/turnstile/config")
+async def get_turnstile_config():
+    """获取Turnstile配置"""
+    return {
+        "enabled": settings.TURNSTILE_ENABLED,
+        "site_key": settings.TURNSTILE_SITE_KEY if settings.TURNSTILE_ENABLED else None
     }
 
 # 用户相关路由
@@ -59,11 +69,26 @@ async def get_reviews():
 
 # 文件上传相关路由
 @api_router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    request: Request,
+    file: UploadFile = File(...),
+    turnstile_token: Optional[str] = Form(None)
+):
     """
-    单文件上传接口
+    单文件上传接口 (包含Turnstile验证)
     """
+    # print(f"[Upload] 接收到上传请求:")
+    # print(f"  文件名: {file.filename}")
+    # print(f"  文件大小: {file.size if hasattr(file, 'size') else '未知'}")
+    # print(f"  Turnstile令牌: {turnstile_token[:20] + '...' if turnstile_token else 'None'}")
+    # print(f"  Turnstile启用: {settings.TURNSTILE_ENABLED}")
+    
     try:
+        # Turnstile验证
+        if settings.TURNSTILE_ENABLED:
+            client_ip = request.client.host if request.client else None
+            await verify_turnstile(turnstile_token, client_ip)
+        
         # 检查文件大小
         # 注意：FastAPI的UploadFile没有直接的size属性，需要读取文件内容来确定大小
         file_content = await file.read()
@@ -123,10 +148,24 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @api_router.post("/upload/multiple")
-async def upload_multiple_files(files: List[UploadFile] = File(...)):
+async def upload_multiple_files(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    turnstile_token: Optional[str] = Form(None)
+):
     """
-    多文件上传接口
+    多文件上传接口 (包含Turnstile验证)
     """
+    try:
+        # Turnstile验证
+        if settings.TURNSTILE_ENABLED:
+            client_ip = request.client.host if request.client else None
+            await verify_turnstile(turnstile_token, client_ip)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"验证失败: {str(e)}")
+    
     if len(files) > 10:  # 限制最多10个文件
         raise HTTPException(status_code=400, detail="一次最多上传10个文件")
     

@@ -10,7 +10,8 @@ KB Upload Genie 是一个智能化的GitHub仓库内容上传分类系统，专�
 - 📁 **自动分类**: 基于内容智能推荐分类目录
 - 📊 **质量评估**: 内容质量打分和改进建议
 - 🔒 **版权管理**: 版权状态检测和合规性检查
-- 🚀 **GitHub集成**: 自动上传到指定GitHub仓库
+- �️ **安全防护**: 集成Cloudflare Turnstile防止机器人攻击
+- �🚀 **GitHub集成**: 自动上传到指定GitHub仓库
 - 👥 **用户友好**: 专为小白用户设计的简洁界面
 
 ## 架构图
@@ -61,8 +62,16 @@ KB Upload Genie 是一个智能化的GitHub仓库内容上传分类系统，专�
 2. **环境配置**
    ```bash
    # 复制环境变量配置文件
-   cp .env.example .env
-   # 编辑配置文件，填入必要的API密钥
+   cp backend/.env.example backend/.env
+   # 编辑配置文件，填入必要的API密钥和Turnstile配置
+   
+   # Turnstile配置 (可选，用于防机器人攻击)
+   # 1. 访问 https://dash.cloudflare.com/?to=/:account/turnstile
+   # 2. 创建新站点获取Site Key和Secret Key
+   # 3. 在.env文件中配置：
+   #    TURNSTILE_ENABLED=true
+   #    TURNSTILE_SITE_KEY=your-site-key
+   #    TURNSTILE_SECRET_KEY=your-secret-key
    ```
 
 3. **使用Docker启动**

@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     # 任务队列配置 - 简化版，不使用Celery
     ENABLE_BACKGROUND_TASKS: bool = Field(default=False)
     
+    # Cloudflare Turnstile配置
+    TURNSTILE_SECRET_KEY: Optional[str] = Field(default=None)
+    TURNSTILE_SITE_KEY: Optional[str] = Field(default=None)
+    TURNSTILE_ENABLED: bool = Field(default=False)
+    TURNSTILE_ALLOW_SKIP_IN_DEV: bool = Field(default=True)
+    
     # 邮件配置
     SMTP_HOST: Optional[str] = Field(default=None)
     SMTP_PORT: int = Field(default=587)
