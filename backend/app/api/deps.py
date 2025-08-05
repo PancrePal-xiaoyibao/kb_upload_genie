@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 async def get_db() -> Generator[AsyncSession, None, None]:
-    """获取数据库会d话"""
+    """获取数据库会话"""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -94,7 +94,7 @@ async def require_admin_user(
     """
     依赖项：要求当前用户必须是管理员
     """
-    if not current_user.is_admin():
+    if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要管理员权限",
