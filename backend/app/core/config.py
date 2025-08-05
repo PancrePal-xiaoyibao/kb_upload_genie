@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # API认证配置
     API_TOKEN: str = Field(default="admin_token_change_in_production")
     
+    # 管理员账户配置
+    ADMIN_EMAIL: str = Field(default="admin@example.com")
+    ADMIN_PASSWORD: str = Field(default="admin123456")
+    ADMIN_NAME: str = Field(default="系统管理员")
+    
     # AI服务配置
     OPENAI_API_KEY: Optional[str] = Field(default=None)
     OPENAI_BASE_URL: Optional[str] = Field(default=None)

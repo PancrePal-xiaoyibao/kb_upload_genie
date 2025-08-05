@@ -115,8 +115,8 @@ class Article(Base):
     )
     
     # 关联关系
-    user_id: Mapped[int] = mapped_column(
-        Integer,
+    user_id: Mapped[str] = mapped_column(
+        String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
         comment="用户ID"

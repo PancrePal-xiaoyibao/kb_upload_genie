@@ -1,0 +1,61 @@
+
+html, body, #root, .App {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f2f5;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+}
+
+/* General responsive styles */
+.container {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  .container {
+    width: 750px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    width: 970px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    width: 1170px;
+  }
+}
+
+/* Ant Design Overrides for modern look */
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: none;
+}
+
+.ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.045);
+}
+
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-layout-sider {
+    background: #001529;
+}

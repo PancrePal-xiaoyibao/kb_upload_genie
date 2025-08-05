@@ -1,0 +1,28 @@
+
+.users-table-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow-x: auto;
+}
+
+.users-toolbar {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.users-toolbar .ant-input-search {
+  max-width: 300px;
+}
+
+@media (max-width: 768px) {
+  .users-toolbar {
+    flex-direction: column;
+  }
+  .users-toolbar .ant-input-search {
+    max-width: none;
+  }
+}
