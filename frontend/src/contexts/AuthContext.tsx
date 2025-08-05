@@ -87,24 +87,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
+      console.log('开始认证检查...');
+      
       // 首先验证存储的令牌是否有效
-      if (!validateStoredToken()) {
+      const tokenValid = validateStoredToken();
+      console.log('令牌验证结果:', tokenValid);
+      
+      if (!tokenValid) {
+        console.log('令牌无效，设置为未认证状态');
         dispatch({ type: 'LOGIN_FAILURE' });
         return;
       }
 
       if (isAuthenticated()) {
+        console.log('用户已认证，检查本地用户信息...');
+        
         // 先尝试从本地存储获取用户信息
         const storedUser = getStoredUser();
+        console.log('本地存储的用户信息:', storedUser);
+        
         if (storedUser) {
+          console.log('使用本地用户信息设置认证状态');
           dispatch({ type: 'LOGIN_SUCCESS', payload: storedUser });
           return;
         }
         
+        console.log('本地无用户信息，从服务器获取...');
         // 如果本地没有用户信息，从服务器获取
         const user = await getCurrentUser();
+        console.log('从服务器获取的用户信息:', user);
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
       } else {
+        console.log('用户未认证');
         dispatch({ type: 'LOGIN_FAILURE' });
       }
     } catch (error) {

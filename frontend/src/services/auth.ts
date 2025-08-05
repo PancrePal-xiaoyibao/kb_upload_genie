@@ -5,15 +5,17 @@ export interface LoginParams {
   password: string;
 }
 
-export interface LoginResponse {
+export interface TokenResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  };
+  expires_in: number;
+}
+
+export interface LoginResponse {
+  user: UserInfo;
+  token: TokenResponse;
+  message: string;
 }
 
 export interface UserInfo {

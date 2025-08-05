@@ -12,13 +12,23 @@ export const isValidToken = (token: string | null): boolean => {
   
   // 检查每个部分是否为有效的base64字符串
   try {
-    parts.forEach(part => {
+    parts.forEach((part, index) => {
       if (!part) throw new Error('Empty part');
-      // 简单的base64格式检查
-      atob(part.replace(/-/g, '+').replace(/_/g, '/'));
+      
+      // 对于JWT，只需要验证payload部分（第二部分）能够正确解码
+      if (index === 1) {
+        // JWT使用base64url编码，需要进行适当的填充
+        let base64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        // 添加必要的填充
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        atob(base64);
+      }
     });
     return true;
-  } catch {
+  } catch (error) {
+    console.warn('Token validation failed:', error);
     return false;
   }
 };
@@ -26,10 +36,17 @@ export const isValidToken = (token: string | null): boolean => {
 // 检查令牌是否过期
 export const isTokenExpired = (token: string): boolean => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payloadPart = token.split('.')[1];
+    // JWT使用base64url编码，需要进行适当的填充
+    let base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const payload = JSON.parse(atob(base64));
     const currentTime = Math.floor(Date.now() / 1000);
     return payload.exp < currentTime;
-  } catch {
+  } catch (error) {
+    console.warn('Token expiry check failed:', error);
     return true;
   }
 };
@@ -37,10 +54,17 @@ export const isTokenExpired = (token: string): boolean => {
 // 获取令牌剩余时间（秒）
 export const getTokenRemainingTime = (token: string): number => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payloadPart = token.split('.')[1];
+    // JWT使用base64url编码，需要进行适当的填充
+    let base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const payload = JSON.parse(atob(base64));
     const currentTime = Math.floor(Date.now() / 1000);
     return Math.max(0, payload.exp - currentTime);
-  } catch {
+  } catch (error) {
+    console.warn('Token remaining time check failed:', error);
     return 0;
   }
 };

@@ -26,15 +26,11 @@ const AdminLogin: React.FC = () => {
         return;
       }
 
-      // 转换用户信息类型
-      const userInfo = {
-        ...response.user,
-        status: 'active',
-        created_at: new Date().toISOString()
-      };
+      // 使用后端返回的用户信息
+      const userInfo = response.user;
       
-      // 存储认证信息
-      storeUserInfo(response.access_token, userInfo);
+      // 存储认证信息 - 使用token.access_token
+      storeUserInfo(response.token.access_token, userInfo);
       
       // 更新认证状态
       login(userInfo);
