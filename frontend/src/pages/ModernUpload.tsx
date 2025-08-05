@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import TurnstileComponent from '../components/TurnstileComponent'
 import { useTurnstileConfig } from '../hooks/useTurnstile'
 import { cn } from '@/lib/utils'
+import request from '@/utils/request'
 
 interface FileItem {
   id: string
@@ -179,14 +180,15 @@ const ModernUpload: React.FC = () => {
             formData.append('turnstile_token', tokenToSend)
           }
 
-          const response = await fetch('http://localhost:8000/api/v1/upload', {
-            method: 'POST',
-            body: formData,
+          const response = await request.post('/v1/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
           })
 
-          const result = await response.json()
+          const result = response.data
 
-          if (response.ok && result.success) {
+          if (response.status === 200 && result.success) {
             // 上传成功
             setFiles(prev => prev.map(f => 
               f.id === fileItem.id 
@@ -208,13 +210,26 @@ const ModernUpload: React.FC = () => {
               setTurnstileToken(null)
             }
           }
-        } catch (error) {
-          // 网络错误
+        } catch (error: any) {
+          // 处理Axios错误
+          let errorMsg = '网络错误'
+          if (error.response?.data?.detail) {
+            errorMsg = error.response.data.detail
+          } else if (error.message) {
+            errorMsg = error.message
+          }
+          
           setFiles(prev => prev.map(f => 
             f.id === fileItem.id 
-              ? { ...f, status: 'error', progress: 0, error: '网络错误' }
+              ? { ...f, status: 'error', progress: 0, error: errorMsg }
               : f
           ))
+
+          // 如果是认证相关错误，重置验证状态
+          if (error.response?.status === 401 || errorMsg.includes('Turnstile') || errorMsg.includes('验证令牌')) {
+            setTurnstileVerified(false)
+            setTurnstileToken(null)
+          }
         }
       }
 

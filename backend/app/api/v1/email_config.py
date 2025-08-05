@@ -11,20 +11,20 @@ from datetime import datetime
 import json
 import logging
 
-from app.core.database import get_db
+from app.api.deps import get_db, require_admin_user
+from app.models.user import User
 from app.models.email_upload import EmailConfig, EmailDomainRule, AttachmentRule
 from app.core.config import settings
 from app.services.email_service import email_service
 from app.services.redis_service import redis_service
 from app.services.notification_service import notification_service
-from app.api.deps import get_admin_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/config")
 async def get_email_config(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取当前邮件配置
@@ -87,7 +87,7 @@ async def get_email_config(
 
 @router.post("/test-connection")
 async def test_email_connection(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     测试邮件服务连接
@@ -153,7 +153,7 @@ async def test_email_connection(
 @router.get("/attachment-rules")
 async def get_attachment_rules(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取附件规则配置
@@ -212,7 +212,7 @@ async def create_attachment_rule(
     allowed_extensions: Optional[str] = Form(None, description="允许的扩展名（JSON数组）"),
     blocked_extensions: Optional[str] = Form(None, description="禁止的扩展名（JSON数组）"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     创建附件规则
@@ -277,7 +277,7 @@ async def update_attachment_rule(
     blocked_extensions: Optional[str] = Form(None, description="禁止的扩展名（JSON数组）"),
     is_active: Optional[bool] = Form(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     更新附件规则
@@ -340,7 +340,7 @@ async def update_attachment_rule(
 async def delete_attachment_rule(
     rule_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     删除附件规则
@@ -372,7 +372,7 @@ async def delete_attachment_rule(
 
 @router.get("/system-status")
 async def get_system_status(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取邮件系统状态
@@ -446,7 +446,7 @@ async def get_system_status(
 
 @router.post("/system/restart-services")
 async def restart_email_services(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     重启邮件服务
@@ -482,7 +482,7 @@ async def restart_email_services(
 
 @router.post("/system/clear-cache")
 async def clear_system_cache(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     清理系统缓存
@@ -507,7 +507,7 @@ async def clear_system_cache(
 async def get_recent_logs(
     lines: int = 100,
     level: str = "INFO",
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取最近的系统日志

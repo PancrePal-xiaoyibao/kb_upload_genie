@@ -5,14 +5,12 @@
 
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
+from app.api.deps import get_db, require_current_user
 from app.core.auth import (
     authenticate_user, 
     create_access_token, 
     create_refresh_token,
-    get_current_user,
     verify_token
 )
 from app.core.config import settings
@@ -31,7 +29,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["认证"])
-security = HTTPBearer()
 
 
 @router.post("/login", response_model=LoginResponse, summary="用户登录")
@@ -59,11 +56,11 @@ async def login(
         # 创建访问令牌和刷新令牌
         access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "email": user.email, "role": user.role.value},
+            data={"sub": str(user.id), "email": user.email, "role": user.role.value},
             expires_delta=access_token_expires
         )
         refresh_token = create_refresh_token(
-            data={"sub": user.id, "email": user.email}
+            data={"sub": str(user.id), "email": user.email}
         )
         
         # 构造响应
@@ -116,7 +113,7 @@ async def refresh_token(
             )
         
         # 获取用户信息
-        user = await get_current_user(session, refresh_data.refresh_token)
+        user = await session.get(User, user_id)
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -126,7 +123,7 @@ async def refresh_token(
         # 创建新的访问令牌
         access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "email": user.email, "role": user.role.value},
+            data={"sub": str(user.id), "email": user.email, "role": user.role.value},
             expires_delta=access_token_expires
         )
         
@@ -147,39 +144,19 @@ async def refresh_token(
 
 
 @router.get("/me", response_model=UserInfo, summary="获取当前用户信息")
-async def get_me(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = Depends(get_db)
-):
+async def get_me(current_user: User = Depends(require_current_user)):
     """
     获取当前登录用户的信息
     
     需要在请求头中提供有效的访问令牌
     """
-    try:
-        user = await get_current_user(session, credentials.credentials)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="无效的访问令牌"
-            )
-        
-        return UserInfo.model_validate(user)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"获取用户信息失败: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="获取用户信息失败"
-        )
+    return UserInfo.model_validate(current_user)
 
 
 @router.post("/change-password", response_model=ApiResponse, summary="修改密码")
 async def change_password(
     password_data: ChangePasswordRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(require_current_user),
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -189,25 +166,18 @@ async def change_password(
     - **new_password**: 新密码
     """
     try:
-        user = await get_current_user(session, credentials.credentials)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="无效的访问令牌"
-            )
-        
         # 验证旧密码
-        if not user.check_password(password_data.old_password):
+        if not current_user.check_password(password_data.old_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="旧密码错误"
             )
         
         # 设置新密码
-        user.set_password(password_data.new_password)
+        current_user.set_password(password_data.new_password)
         await session.commit()
         
-        logger.info(f"用户修改密码成功: {user.email}")
+        logger.info(f"用户修改密码成功: {current_user.email}")
         return ApiResponse(
             success=True,
             message="密码修改成功"
@@ -224,9 +194,7 @@ async def change_password(
 
 
 @router.post("/logout", response_model=ApiResponse, summary="用户登出")
-async def logout(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+async def logout():
     """
     用户登出接口
     

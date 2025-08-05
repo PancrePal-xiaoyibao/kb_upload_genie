@@ -9,6 +9,14 @@ from datetime import datetime
 from app.models.user import UserRole, UserStatus
 
 
+class TokenPayload(BaseModel):
+    """JWT令牌负载模型"""
+    sub: str = Field(..., description="用户ID")
+    email: EmailStr = Field(..., description="用户邮箱")
+    role: UserRole = Field(..., description="用户角色")
+    exp: int = Field(..., description="令牌过期时间")
+
+
 class LoginRequest(BaseModel):
     """登录请求模型"""
     email: EmailStr = Field(..., description="用户邮箱")

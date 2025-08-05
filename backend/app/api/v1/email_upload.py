@@ -9,8 +9,9 @@ from sqlalchemy import select, func, and_
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from app.core.database import get_db
+from app.api.deps import get_db, require_admin_user
 from app.models.email_upload import EmailUpload, EmailUploadStatus
+from app.models.user import User
 from app.schemas.email_upload import (
     EmailUploadResponse,
     EmailUploadListResponse,
@@ -19,7 +20,6 @@ from app.schemas.email_upload import (
     EmailUploadStatsResponse
 )
 from app.utils.email_utils import mask_email
-from app.api.deps import get_admin_user
 
 router = APIRouter()
 
@@ -32,7 +32,7 @@ async def get_email_uploads(
     start_date: Optional[datetime] = Query(None, description="开始日期"),
     end_date: Optional[datetime] = Query(None, description="结束日期"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取邮件上传文件列表
@@ -94,7 +94,7 @@ async def get_email_uploads(
 async def get_email_upload(
     upload_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取单个邮件上传文件详情
@@ -130,7 +130,7 @@ async def update_upload_status(
     status: EmailUploadStatus,
     comment: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     更新邮件上传文件状态
@@ -146,7 +146,7 @@ async def update_upload_status(
     # 更新状态
     upload.status = status
     upload.processed_at = datetime.utcnow()
-    upload.reviewer_id = current_user["user_id"]
+    upload.reviewer_id = current_user.id
     if comment:
         upload.review_comment = comment
     
@@ -159,7 +159,7 @@ async def update_upload_status(
 async def get_email_upload_stats(
     days: int = Query(7, ge=1, le=365, description="统计天数"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取邮件上传统计信息

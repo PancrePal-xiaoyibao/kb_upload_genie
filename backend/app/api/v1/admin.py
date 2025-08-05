@@ -6,8 +6,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.core.database import get_db
-from app.core.dependencies import get_current_admin_user, get_current_moderator_user
+from app.api.deps import get_db, require_admin_user, require_current_user
 from app.models.user import User, UserRole, UserStatus
 from app.schemas.auth import UserInfo, ApiResponse
 from typing import List
@@ -20,7 +19,7 @@ router = APIRouter(prefix="/admin", tags=["管理员"])
 
 @router.get("/dashboard", response_model=dict, summary="管理员仪表板")
 async def admin_dashboard(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_user),
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -60,7 +59,7 @@ async def admin_dashboard(
 
 @router.get("/users", response_model=List[UserInfo], summary="获取所有用户")
 async def get_all_users(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_user),
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -84,7 +83,7 @@ async def get_all_users(
 @router.get("/users/{user_id}", response_model=UserInfo, summary="获取用户详情")
 async def get_user_detail(
     user_id: str,
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_user),
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -117,7 +116,7 @@ async def get_user_detail(
 async def update_user_status(
     user_id: str,
     new_status: UserStatus,
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_user),
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -161,27 +160,9 @@ async def update_user_status(
         )
 
 
-@router.get("/moderator/test", response_model=dict, summary="审核员测试接口")
-async def moderator_test(
-    current_user: User = Depends(get_current_moderator_user)
-):
-    """
-    审核员测试接口
-    审核员和管理员都可以访问
-    """
-    return {
-        "message": "审核员权限验证成功",
-        "user": {
-            "email": current_user.email,
-            "role": current_user.role.value,
-            "name": current_user.name
-        }
-    }
-
-
 @router.get("/system/info", response_model=dict, summary="系统信息")
 async def system_info(
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取系统信息

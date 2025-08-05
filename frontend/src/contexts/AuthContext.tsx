@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { UserInfo, getCurrentUser, isAuthenticated, getStoredUser } from '@/services/auth';
+import { validateStoredToken, clearAuthData } from '@/utils/auth';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -78,8 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
+    clearAuthData();
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -87,6 +87,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
+      // 首先验证存储的令牌是否有效
+      if (!validateStoredToken()) {
+        dispatch({ type: 'LOGIN_FAILURE' });
+        return;
+      }
+
       if (isAuthenticated()) {
         // 先尝试从本地存储获取用户信息
         const storedUser = getStoredUser();
@@ -103,7 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('认证检查失败:', error);
-      logout();
+      clearAuthData();
+      dispatch({ type: 'LOGIN_FAILURE' });
     }
   };
 

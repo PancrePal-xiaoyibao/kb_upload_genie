@@ -1,5 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { message } from 'antd';
+import { validateStoredToken, getStoredToken, clearAuthData } from './auth';
+
+// 防止重复跳转的标志
+let isRedirecting = false;
 
 // 创建axios实例
 const request: AxiosInstance = axios.create({
@@ -13,10 +17,15 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('admin_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // 验证并获取有效的token
+    if (validateStoredToken()) {
+      const token = getStoredToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      // 如果令牌无效，清理认证数据
+      clearAuthData();
     }
     return config;
   },
@@ -36,10 +45,17 @@ request.interceptors.response.use(
       
       switch (status) {
         case 401:
-          message.error('登录已过期，请重新登录');
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('admin_user');
-          window.location.href = '/admin/login';
+          if (!isRedirecting) {
+            isRedirecting = true;
+            message.error('登录已过期，请重新登录');
+            clearAuthData();
+            
+            // 延迟跳转，确保消息显示
+            setTimeout(() => {
+              window.location.href = '/admin/login';
+              isRedirecting = false;
+            }, 1000);
+          }
           break;
         case 403:
           message.error('权限不足');

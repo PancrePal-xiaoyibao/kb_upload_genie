@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 import os
 import json
 
-from app.core.database import get_db
-from app.api.deps import get_admin_user, get_current_user, get_optional_current_user
+from app.api.deps import get_db, require_admin_user, require_current_user, get_optional_current_user
+from app.models.user import User
 from app.models.email_upload import (
     EmailUpload, 
     EmailUploadStatus, 
@@ -314,7 +314,7 @@ async def get_email_uploads_admin(
     end_date: Optional[datetime] = Query(None, description="结束日期"),
     search: Optional[str] = Query(None, description="搜索关键词"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取邮件上传文件列表（管理员版本，显示完整信息）
@@ -390,7 +390,7 @@ async def get_email_uploads_admin(
 async def get_email_upload_detail_admin(
     upload_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取单个邮件上传文件详情（管理员版本，显示完整信息）
@@ -432,7 +432,7 @@ async def update_upload_status(
     status: EmailUploadStatus,
     comment: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     更新邮件上传文件状态（需要管理员权限）
@@ -449,7 +449,7 @@ async def update_upload_status(
         old_status = upload.status
         upload.status = status
         upload.processed_at = datetime.now()
-        upload.reviewer_id = current_user["user_id"]  # 记录审核员ID
+        upload.reviewer_id = current_user.id  # 记录审核员ID
         if comment:
             upload.review_comment = comment
         
@@ -473,7 +473,7 @@ async def update_upload_status(
 async def delete_upload(
     upload_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     删除邮件上传文件（需要管理员权限）
@@ -507,7 +507,7 @@ async def delete_upload(
 async def get_upload_stats_admin(
     days: int = Query(7, ge=1, le=365, description="统计天数"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     获取邮件上传统计信息（需要管理员权限）
@@ -589,7 +589,7 @@ async def get_upload_stats_admin(
 @router.post("/admin/manual-check")
 async def manual_email_check(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     手动触发邮件检查（需要管理员权限）
@@ -618,7 +618,7 @@ async def manual_email_check(
 
 @router.post("/admin/test-email")
 async def test_email_connection(
-    current_user: dict = Depends(get_admin_user)
+    current_user: User = Depends(require_admin_user)
 ):
     """
     测试邮件服务连接（需要管理员权限）
