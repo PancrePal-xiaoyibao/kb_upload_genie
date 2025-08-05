@@ -1,0 +1,380 @@
+.system-container {
+  padding: 0;
+}
+
+/* 加载状态 */
+.system-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+}
+
+/* 页面头部 */
+.system-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.header-content h4 {
+  color: #262626;
+  margin-bottom: 4px;
+}
+
+.system-header .ant-btn {
+  border-radius: 6px;
+}
+
+/* 状态概览 */
+.status-overview {
+  margin-bottom: 24px;
+}
+
+.status-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: 100px;
+}
+
+.status-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0;
+}
+
+.status-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.status-icon.database {
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+}
+
+.status-icon.api {
+  background: linear-gradient(135deg, #52c41a, #73d13d);
+}
+
+.status-icon.auth {
+  background: linear-gradient(135deg, #722ed1, #9254de);
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-info .ant-typography {
+  margin-bottom: 8px;
+  color: #262626;
+}
+
+/* 配置卡片 */
+.config-card,
+.admin-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.config-card .ant-card-head,
+.admin-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.config-card .ant-card-head-title,
+.admin-card .ant-card-head-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+/* 描述列表样式 */
+.config-card .ant-descriptions-item-label,
+.admin-card .ant-descriptions-item-label {
+  background: #fafafa;
+  font-weight: 500;
+  color: #595959;
+  width: 100px;
+}
+
+.config-card .ant-descriptions-item-content,
+.admin-card .ant-descriptions-item-content {
+  background: white;
+  color: #262626;
+}
+
+.config-card .ant-descriptions-item-content .ant-typography,
+.admin-card .ant-descriptions-item-content .ant-typography {
+  margin: 0;
+}
+
+/* 健康检查卡片 */
+.health-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.health-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.health-card .ant-card-head-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  height: 80px;
+}
+
+.health-status {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.health-status.success {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 2px solid #b7eb8f;
+}
+
+.health-status.warning {
+  background: #fff7e6;
+  color: #faad14;
+  border: 2px solid #ffd591;
+}
+
+.health-status.error {
+  background: #fff2f0;
+  color: #ff4d4f;
+  border: 2px solid #ffccc7;
+}
+
+.health-info {
+  flex: 1;
+}
+
+.health-info .ant-typography {
+  margin: 0;
+}
+
+/* 资源卡片 */
+.resource-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.resource-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.resource-card .ant-card-head-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+.resource-item {
+  text-align: center;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.resource-value {
+  margin: 8px 0;
+}
+
+.resource-item .ant-typography {
+  margin: 0;
+}
+
+/* 标签样式 */
+.system-container .ant-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: none;
+}
+
+/* 代码文本样式 */
+.system-container .ant-typography-copy {
+  margin-left: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .system-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .header-content {
+    text-align: center;
+  }
+  
+  .system-header .ant-btn {
+    align-self: center;
+  }
+  
+  .status-item {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px 0;
+    height: auto;
+  }
+  
+  .status-icon {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
+  .health-item {
+    flex-direction: column;
+    text-align: center;
+    height: auto;
+    padding: 16px;
+  }
+  
+  .health-status {
+    margin-bottom: 8px;
+  }
+  
+  .resource-item {
+    height: auto;
+    min-height: 100px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .system-container {
+    margin: -24px -16px;
+  }
+  
+  .system-container .ant-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin-bottom: 1px;
+  }
+  
+  .system-header {
+    padding: 0 16px 16px;
+    margin-bottom: 16px;
+  }
+  
+  .status-overview {
+    margin: 0 -24px 16px;
+  }
+  
+  .status-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin-bottom: 1px;
+  }
+}
+
+/* 动画效果 */
+.system-container .ant-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 卡片悬停效果 */
+.config-card:hover,
+.admin-card:hover,
+.health-card:hover,
+.resource-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Alert 样式 */
+.system-container .ant-alert {
+  border-radius: 8px;
+}
+
+/* 描述列表边框 */
+.system-container .ant-descriptions-bordered .ant-descriptions-item-label,
+.system-container .ant-descriptions-bordered .ant-descriptions-item-content {
+  border-right: 1px solid #f0f0f0;
+}
+
+/* 复制按钮样式 */
+.system-container .ant-typography-copy {
+  color: #1890ff;
+}
+
+.system-container .ant-typography-copy:hover {
+  color: #40a9ff;
+}
+
+/* 状态标签动画 */
+.system-container .ant-tag {
+  transition: all 0.3s ease;
+}
+
+.system-container .ant-tag:hover {
+  transform: scale(1.05);
+}
+
+/* 图标旋转动画 */
+.system-header .ant-btn-loading .anticon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

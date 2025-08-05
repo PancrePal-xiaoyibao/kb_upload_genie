@@ -1,11 +1,13 @@
-// Vite 配置文件
-// 注意：在安装依赖后，TypeScript 类型声明将自动可用
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
-export default {
-  plugins: [],
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': './src',
+      '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
@@ -17,8 +19,4 @@ export default {
       },
     },
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-  },
-}
+})
