@@ -21,6 +21,7 @@ class LoginRequest(BaseModel):
     """登录请求模型"""
     email: EmailStr = Field(..., description="用户邮箱")
     password: str = Field(..., min_length=6, description="用户密码")
+    turnstile_token: Optional[str] = Field(None, description="Turnstile验证令牌")
 
 
 class TokenResponse(BaseModel):
