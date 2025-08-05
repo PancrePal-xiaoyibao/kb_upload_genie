@@ -258,7 +258,7 @@ const ModernUpload: React.FC = () => {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-4xl mx-auto px-6 space-y-8">
       {/* 页面标题 */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold">文件上传</h1>

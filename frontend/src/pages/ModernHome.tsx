@@ -30,7 +30,7 @@ const ModernHome: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-16">
+      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16">
         <div className="text-center space-y-8">
           {/* 装饰性边框 */}
           <div className="relative">
@@ -83,7 +83,7 @@ const ModernHome: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-4xl mx-auto px-6 py-20">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon
