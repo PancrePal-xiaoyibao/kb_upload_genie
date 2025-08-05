@@ -17,7 +17,7 @@ export const useTurnstileConfig = () => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/v1/turnstile/config')
+        const response = await axios.get('/api/v1/turnstile/config')
         setConfig(response.data)
       } catch (err) {
         setError('获取Turnstile配置失败')

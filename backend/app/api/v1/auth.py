@@ -4,7 +4,7 @@
 """
 
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, require_current_user
 from app.core.auth import (
@@ -14,6 +14,7 @@ from app.core.auth import (
     verify_token
 )
 from app.core.config import settings
+from app.core.turnstile import verify_turnstile
 from app.schemas.auth import (
     LoginRequest, 
     LoginResponse, 
@@ -34,6 +35,7 @@ router = APIRouter(prefix="/auth", tags=["认证"])
 @router.post("/login", response_model=LoginResponse, summary="用户登录")
 async def login(
     login_data: LoginRequest,
+    request: Request,
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -41,10 +43,16 @@ async def login(
     
     - **email**: 用户邮箱
     - **password**: 用户密码
+    - **turnstile_token**: Turnstile验证令牌（可选）
     
     返回用户信息和访问令牌
     """
     try:
+        # Turnstile验证（如果启用）
+        if settings.TURNSTILE_ENABLED:
+            client_ip = request.client.host if request.client else None
+            await verify_turnstile(login_data.turnstile_token, client_ip)
+        
         # 验证用户凭据
         user = await authenticate_user(session, login_data.email, login_data.password)
         if not user:
