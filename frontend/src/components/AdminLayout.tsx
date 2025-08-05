@@ -123,7 +123,7 @@ const AdminLayout: React.FC = () => {
   return (
     <div className="admin-layout-container">
       <Layout className="admin-layout">
-      {/* 侧边栏 */}
+        {/* 侧边栏 */}
       <Sider
         trigger={null}
         collapsible
@@ -214,6 +214,7 @@ const AdminLayout: React.FC = () => {
             <Outlet />
           </div>
         </Content>
+      </Layout>
       </Layout>
     </div>
   );
