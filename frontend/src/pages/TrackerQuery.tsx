@@ -4,20 +4,29 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Alert } from '../components/ui/alert';
-import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { Separator } from '../components/ui/separator';
-import TrackerService, { TrackerResponse, TrackerStatus } from '../services/tracker';
-import StatusIndicator, { StatusCard } from '../components/StatusIndicator';
-import { SimpleErrorBoundary } from '../components/ErrorBoundary';
+import TrackerService, { TrackerResponse } from '../services/tracker';
+import StatusIndicator from '../components/StatusIndicator';
 import { useToastHelpers } from '../components/Toast';
 
 const TrackerQuery: React.FC = () => {
-  const [trackerId, setTrackerId] = useState('');
+  // 从URL参数中获取tracker_id
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTrackerId = urlParams.get('id') || '';
+  
+  const [trackerId, setTrackerId] = useState(initialTrackerId);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TrackerResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const toast = useToastHelpers();
+
+  // 如果URL中有tracker_id，自动查询
+  React.useEffect(() => {
+    if (initialTrackerId) {
+      handleQuery();
+    }
+  }, []);
 
   const handleQuery = async () => {
     const trimmedId = trackerId.trim();
@@ -179,7 +188,7 @@ const TrackerQuery: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleCopyTrackerId(result.data.tracker_id)}
+                  onClick={() => handleCopyTrackerId(result.data?.tracker_id || '')}
                   className="ml-2 text-xs"
                 >
                   📋 复制

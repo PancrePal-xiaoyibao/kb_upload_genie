@@ -10,8 +10,8 @@ import AdminLogin from '@/pages/admin/Login';
 import Dashboard from '@/pages/admin/Dashboard';
 import Users from '@/pages/admin/Users';
 import System from '@/pages/admin/System';
-import Home from '@/pages/Home';
-import Upload from '@/pages/Upload';
+import ModernHome from '@/pages/ModernHome';
+import ModernUpload from '@/pages/ModernUpload';
 import TrackerQuery from '@/pages/TrackerQuery';
 import TrackerTest from '@/pages/TrackerTest';
 import './App.css';
@@ -26,8 +26,8 @@ const App: React.FC = () => {
               <Routes>
                 {/* 主站路由 */}
                 <Route path="/" element={<ModernLayout />}>
-                  <Route index element={<Home />} />
-                  <Route path="upload" element={<Upload />} />
+                  <Route index element={<ModernHome />} />
+                  <Route path="upload" element={<ModernUpload />} />
                 </Route>
                 
                 {/* 跟踪查询页面（独立路由，不需要布局） */}

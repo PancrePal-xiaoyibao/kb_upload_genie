@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Upload, ArrowRight, Zap, Shield, Target, Smartphone } from 'lucide-react'
+import { ArrowRight, Zap, Shield, Target, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const ModernHome: React.FC = () => {

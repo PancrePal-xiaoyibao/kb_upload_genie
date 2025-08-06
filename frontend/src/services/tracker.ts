@@ -39,7 +39,7 @@ export class TrackerService {
       const response = await request.post<TrackerResponse>(`${this.baseUrl}/query`, {
         tracker_id: trackerId
       });
-      return response;
+      return response.data;
     } catch (error: any) {
       // 处理HTTP错误响应
       if (error.response?.data) {
@@ -61,7 +61,7 @@ export class TrackerService {
   static async getStatus(trackerId: string): Promise<TrackerResponse> {
     try {
       const response = await request.get<TrackerResponse>(`${this.baseUrl}/status/${trackerId}`);
-      return response;
+      return response.data;
     } catch (error: any) {
       // 处理HTTP错误响应
       if (error.response?.data) {
@@ -83,7 +83,7 @@ export class TrackerService {
   static async checkHealth(): Promise<{ status: string; service: string; message: string }> {
     try {
       const response = await request.get(`${this.baseUrl}/health`);
-      return response;
+      return response.data;
     } catch (error) {
       throw new Error('跟踪服务不可用');
     }

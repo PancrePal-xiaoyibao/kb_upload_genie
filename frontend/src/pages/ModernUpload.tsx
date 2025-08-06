@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Upload as UploadIcon, FileText, AlertCircle, CheckCircle, X, Shield } from 'lucide-react'
+import { Upload as UploadIcon, FileText, AlertCircle, CheckCircle, X, Shield, Copy, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -20,6 +20,7 @@ interface FileItem {
   status: 'ready' | 'uploading' | 'done' | 'error'
   progress: number
   error?: string
+  trackerId?: string
 }
 
 const ModernUpload: React.FC = () => {
@@ -38,6 +39,26 @@ const ModernUpload: React.FC = () => {
   const MAX_RETRY_COUNT = 3
   const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
   const ALLOWED_TYPES = ['.md', '.txt', '.docx', '.pdf', '.pptx', '.js', '.ts', '.py', '.java', '.cpp', '.html', '.css', '.jpg', '.png', '.gif', '.svg', '.webp']
+
+  // 复制Tracker ID到剪贴板
+  const copyTrackerId = async (trackerId: string) => {
+    try {
+      await navigator.clipboard.writeText(trackerId)
+      // 这里可以添加一个toast提示
+      console.log('Tracker ID已复制到剪贴板')
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
+
+  // 跳转到跟踪查询页面
+  // 跳转到跟踪查询页面
+  const goToTracker = (trackerId: string) => {
+    // 直接跳转到跟踪页面，并在URL中预填充tracker_id
+    const url = new URL('/tracker', window.location.origin)
+    url.searchParams.set('id', trackerId)
+    window.open(url.toString(), '_blank')
+  }
 
   // 文件验证
   const validateFile = (file: File): string | null => {
@@ -122,7 +143,7 @@ const ModernUpload: React.FC = () => {
     performUpload(token)
   }
 
-  const handleTurnstileError = (error: string) => {
+  const handleTurnstileError = (_error: string) => {
     setTurnstileLoading(false)
     setTurnstileRetryCount(prev => prev + 1)
     
@@ -189,10 +210,11 @@ const ModernUpload: React.FC = () => {
           const result = response.data
 
           if (response.status === 200 && result.success) {
-            // 上传成功
+            // 上传成功，保存tracker_id
+            const trackerId = result.data?.tracker_id
             setFiles(prev => prev.map(f => 
               f.id === fileItem.id 
-                ? { ...f, status: 'done', progress: 100 }
+                ? { ...f, status: 'done', progress: 100, trackerId }
                 : f
             ))
           } else {
@@ -426,6 +448,45 @@ const ModernUpload: React.FC = () => {
                     
                     {file.error && (
                       <p className="text-xs text-red-500 mt-1">{file.error}</p>
+                    )}
+
+                    {/* 显示Tracker ID */}
+                    {file.status === 'done' && file.trackerId && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-green-800 mb-1">
+                              🎉 上传成功！您的跟踪ID：
+                            </p>
+                            <div className="flex items-center space-x-2">
+                              <code className="text-sm bg-white px-2 py-1 rounded border text-green-700 font-mono">
+                                {file.trackerId}
+                              </code>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyTrackerId(file.trackerId!)}
+                                className="h-7 px-2"
+                              >
+                                <Copy className="h-3 w-3 mr-1" />
+                                复制
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => goToTracker(file.trackerId!)}
+                                className="h-7 px-2"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                查看状态
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-green-600 mt-2">
+                          💡 请保存此跟踪ID，您可以随时使用它查询文件处理状态
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

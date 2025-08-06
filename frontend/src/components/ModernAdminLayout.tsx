@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { 
   Menu, 
-  X, 
   LayoutDashboard, 
   Users, 
   Info, 
@@ -21,7 +20,6 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { logout } from '@/services/auth'
 import { cn } from '@/lib/utils'
