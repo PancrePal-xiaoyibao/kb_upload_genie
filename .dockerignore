@@ -1,0 +1,76 @@
+# KB Upload Genie - Docker忽略文件
+
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# 文档
+README.md
+*.md
+docs/
+
+# 开发工具配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 前端相关 (注意：构建前端时不要排除前端源码)
+node_modules/
+dist/
+.env*
+coverage/
+.nyc_output/
+
+# 后端相关
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
+backend/env/
+backend/venv/
+backend/.venv/
+backend/.env*
+backend/pip-log.txt
+backend/pip-delete-this-directory.txt
+backend/.coverage
+backend/.pytest_cache/
+backend/htmlcov/
+
+# Docker相关
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# 测试文件
+test/
+tests/
+*test.py
+*_test.py
+test_*.py
+
+# 开发依赖 (保留锁定文件用于Docker构建)
+# package-lock.json
+# yarn.lock
