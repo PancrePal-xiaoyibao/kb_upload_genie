@@ -125,7 +125,7 @@ async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     turnstile_token: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     单文件上传接口 (包含Turnstile验证)
@@ -203,10 +203,11 @@ async def upload_file(
                 return ext_mapping.get(extension.lower(), FileType.OTHER)
             
             # 保存到articles表以支持跟踪
+            # 保存到articles表以支持跟踪
             article = Article(
                 title=f"网页上传: {file.filename}",
                 description=f"通过网页上传的文件: {file.filename}",
-                github_url="",  # 网页上传没有GitHub URL
+                github_url=f"web_upload://{file_id}",  # 使用唯一的URL避免冲突
                 github_owner="web_upload",
                 github_repo="files",
                 file_type=get_file_type_enum(file_extension),
@@ -224,6 +225,7 @@ async def upload_file(
                 }
             )
             
+            db.add(article)
             db.add(article)
             db.add(article)
             await db.commit()
@@ -282,9 +284,100 @@ async def upload_multiple_files(
     
     for file in files:
         try:
-            # 重用单文件上传逻辑，但需要传递所有必需的参数
-            result = await upload_file(request, file, None, db)
-            results.append(result["data"])
+            # 为每个文件创建单独的上传处理
+            # 检查文件大小
+            file_content = await file.read()
+            file_size = len(file_content)
+            await file.seek(0)  # 重置文件指针位置
+            
+            if file_size > settings.MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"文件大小超过限制 ({settings.MAX_FILE_SIZE / 1024 / 1024:.1f}MB)"
+                )
+            
+            # 检查文件类型
+            file_extension = Path(file.filename).suffix.lower()
+            allowed_types = settings.ALLOWED_FILE_TYPES
+            if isinstance(allowed_types, str):
+                allowed_types = [ext.strip() for ext in allowed_types.split(',')]
+            
+            if file_extension not in allowed_types:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"不支持的文件类型: {file_extension}"
+                )
+            
+            # 创建上传目录
+            upload_dir = Path(settings.UPLOAD_DIR)
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 生成唯一文件名
+            file_id = str(uuid.uuid4())
+            file_name = f"{file_id}_{file.filename}"
+            file_path = upload_dir / file_name
+            
+            # 保存文件
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            # 生成tracker_id
+            tracker_id = generate_tracker_id("WEB")
+            
+            # 保存到数据库
+            def get_file_type_enum(extension: str):
+                ext_mapping = {
+                    '.md': FileType.MARKDOWN,
+                    '.ipynb': FileType.JUPYTER,
+                    '.py': FileType.CODE,
+                    '.js': FileType.CODE,
+                    '.ts': FileType.CODE,
+                    '.java': FileType.CODE,
+                    '.cpp': FileType.CODE,
+                    '.c': FileType.CODE,
+                    '.txt': FileType.DOCUMENTATION,
+                    '.doc': FileType.DOCUMENTATION,
+                    '.docx': FileType.DOCUMENTATION,
+                    '.pdf': FileType.DOCUMENTATION,
+                    '.readme': FileType.README
+                }
+                return ext_mapping.get(extension.lower(), FileType.OTHER)
+            
+            article = Article(
+                title=f"网页上传: {file.filename}",
+                description=f"通过网页上传的文件: {file.filename}",
+                github_url=f"web_upload://{file_id}",
+                github_owner="web_upload",
+                github_repo="files",
+                file_type=get_file_type_enum(file_extension),
+                file_size=file_size,
+                user_id="anonymous",
+                method=UploadMethod.WEB_UPLOAD,
+                tracker_id=tracker_id,
+                processing_status=ProcessingStatus.COMPLETED,
+                extra_metadata={
+                    "file_id": file_id,
+                    "original_filename": file.filename,
+                    "saved_filename": file_name,
+                    "file_path": str(file_path),
+                    "upload_method": "web_form"
+                }
+            )
+            
+            db.add(article)
+            await db.commit()
+            
+            results.append({
+                "file_id": file_id,
+                "tracker_id": tracker_id,
+                "original_name": file.filename,
+                "saved_name": file_name,
+                "file_size": file_size,
+                "file_type": file_extension,
+                "upload_time": datetime.now().isoformat(),
+                "file_path": str(file_path)
+            })
+            
         except HTTPException as e:
             errors.append({
                 "filename": file.filename,

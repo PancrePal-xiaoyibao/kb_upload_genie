@@ -3,8 +3,8 @@
 处理跟踪ID查询和状态管理
 """
 
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -15,7 +15,7 @@ from app.schemas.tracker import TrackerStatusResponse
 class TrackerService:
     """上传跟踪服务类"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
     
     async def get_tracker_status(self, tracker_id: str) -> Optional[TrackerStatusResponse]:
@@ -30,9 +30,9 @@ class TrackerService:
         """
         try:
             # 查询文章记录
-            article = self.db.query(Article).filter(
-                Article.tracker_id == tracker_id
-            ).first()
+            stmt = select(Article).where(Article.tracker_id == tracker_id)
+            result = await self.db.execute(stmt)
+            article = result.scalar_one_or_none()
             
             if not article:
                 return None
@@ -206,23 +206,23 @@ class TrackerService:
             # 统计各状态的数量
             status_counts = {}
             for status in ProcessingStatus:
-                count = self.db.query(Article).filter(
-                    Article.processing_status == status
-                ).count()
+                stmt = select(Article).where(Article.processing_status == status)
+                result = await self.db.execute(stmt)
+                count = len(result.scalars().all())
                 status_counts[status.value] = count
             
             # 统计各上传方法的数量
             method_counts = {}
             for method in UploadMethod:
-                count = self.db.query(Article).filter(
-                    Article.method == method
-                ).count()
+                stmt = select(Article).where(Article.method == method)
+                result = await self.db.execute(stmt)
+                count = len(result.scalars().all())
                 method_counts[method.value] = count
             
             # 总数统计
-            total_tracked = self.db.query(Article).filter(
-                Article.tracker_id.isnot(None)
-            ).count()
+            stmt = select(Article).where(Article.tracker_id.isnot(None))
+            result = await self.db.execute(stmt)
+            total_tracked = len(result.scalars().all())
             
             return {
                 "total_tracked": total_tracked,
