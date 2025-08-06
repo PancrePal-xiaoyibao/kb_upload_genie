@@ -13,8 +13,15 @@ RUN npm ci
 # 复制源码
 COPY . .
 
-# 构建应用
-RUN npx vite build
+# 构建应用 (添加调试信息)
+RUN echo "开始构建前端应用..." && \
+    echo "当前工作目录: $(pwd)" && \
+    echo "文件列表:" && ls -la && \
+    echo "src目录内容:" && ls -la src/ && \
+    echo "检查vite.config.ts:" && cat vite.config.ts && \
+    echo "检查tsconfig.json:" && cat tsconfig.json && \
+    echo "开始Vite构建..." && \
+    npx vite build --mode production
 
 # 生产环境镜像
 FROM nginx:alpine
