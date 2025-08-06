@@ -6,6 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from app.core.database import init_db, close_db
+from app.services.email_service import email_service
 from app.tasks.email_tasks import email_task_manager
 from app.services.redis_service import redis_service
 from app.core.config import settings
@@ -24,8 +25,10 @@ async def lifespan(app):
         await init_db()
         logger.info("数据库初始化完成")
         
-        # 启动邮件检查任务
+        # 启动邮件服务
         if settings.EMAIL_UPLOAD_ENABLED:
+            await email_service.check_imap_connection()
+            logger.info("邮件服务IMAP连接已建立")
             await email_task_manager.start_email_checking()
             logger.info("邮件检查任务启动完成")
         
@@ -39,8 +42,11 @@ async def lifespan(app):
         
         try:
             # 停止邮件检查任务
-            await email_task_manager.stop_email_checking()
-            logger.info("邮件检查任务已停止")
+            if settings.EMAIL_UPLOAD_ENABLED:
+                await email_task_manager.stop_email_checking()
+                logger.info("邮件检查任务已停止")
+                await email_service.disconnect_imap()
+                logger.info("邮件服务IMAP连接已断开")
             
             # 关闭Redis连接
             await redis_service.close()
@@ -63,8 +69,9 @@ async def startup_event():
     # 初始化数据库
     await init_db()
     
-    # 启动邮件检查任务
+    # 启动邮件服务
     if settings.EMAIL_UPLOAD_ENABLED:
+        await email_service.check_imap_connection()
         await email_task_manager.start_email_checking()
 
 
@@ -73,7 +80,9 @@ async def shutdown_event():
     logger.info("应用关闭事件触发")
     
     # 停止邮件检查任务
-    await email_task_manager.stop_email_checking()
+    if settings.EMAIL_UPLOAD_ENABLED:
+        await email_task_manager.stop_email_checking()
+        await email_service.disconnect_imap()
     
     # 关闭Redis连接
     await redis_service.close()

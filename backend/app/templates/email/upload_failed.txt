@@ -1,0 +1,23 @@
+{{system_name}} - 文件处理失败
+
+❌ 处理失败
+
+很抱歉，您的文件 {{filename}} 处理失败
+跟踪ID：{{tracker_id}}
+失败时间：{{update_time}}
+
+{{#if error_message}}
+错误信息：{{error_message}}
+{{/if}}
+
+建议解决方案：
+• 检查文件格式是否符合要求
+• 确认文件大小未超过限制  
+• 重新上传文件
+• 联系技术支持：{{support_email}}
+
+查看详细信息：{{query_url}}
+
+---
+此邮件由系统自动发送，请勿直接回复。
+© {{system_name}}

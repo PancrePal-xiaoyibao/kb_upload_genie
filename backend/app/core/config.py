@@ -196,6 +196,16 @@ class Settings(BaseSettings):
     # Redis启用标志
     REDIS_ENABLED: bool = Field(default=True, description="是否启用Redis")
     
+    # 邮件模板配置
+    SYSTEM_NAME: str = Field(default="知识库上传系统", description="系统名称")
+    SUPPORT_EMAIL: str = Field(default="support@example.com", description="技术支持邮箱")
+    FRONTEND_URL: str = Field(default="http://localhost:3000", description="前端应用URL")
+    
+    # 自动回复邮件配置
+    AUTO_REPLY_ENABLED: bool = Field(default=True, description="是否启用自动回复邮件")
+    TRACKER_EMAIL_ENABLED: bool = Field(default=True, description="是否发送Tracker ID确认邮件")
+    STATUS_UPDATE_EMAIL_ENABLED: bool = Field(default=True, description="是否发送状态更新邮件")
+    
     # 移除了Celery相关的验证器，因为我们不再使用Celery
     
     class Config:

@@ -3,6 +3,7 @@
 处理跟踪ID查询和状态管理
 """
 
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional, Dict, Any
@@ -10,6 +11,9 @@ from datetime import datetime
 
 from app.models.article import Article, ProcessingStatus, UploadMethod
 from app.schemas.tracker import TrackerStatusResponse
+from app.templates.email_templates import email_template_manager
+
+logger = logging.getLogger(__name__)
 
 
 class TrackerService:
@@ -233,3 +237,171 @@ class TrackerService:
             
         except Exception as e:
             raise Exception(f"获取统计信息失败: {str(e)}")
+    
+    async def send_tracker_confirmation_email(
+        self, 
+        tracker_id: str, 
+        recipient_email: str, 
+        filename: str, 
+        file_size: int,
+        use_existing_connection: bool = False
+    ) -> bool:
+        """
+        发送Tracker ID确认邮件
+        
+        Args:
+            tracker_id: 跟踪ID
+            recipient_email: 收件人邮箱
+            filename: 文件名
+            file_size: 文件大小
+            use_existing_connection: 是否使用现有SMTP连接
+            
+        Returns:
+            bool: 发送是否成功
+        """
+        try:
+            # 导入邮件服务（避免循环导入）
+            from app.services.email_service import email_service
+            
+            # 生成邮件内容
+            email_content = email_template_manager.get_tracker_confirmation_email(
+                tracker_id=tracker_id,
+                filename=filename,
+                file_size=file_size,
+                recipient_email=recipient_email
+            )
+            
+            # 发送邮件
+            success = await self._send_email(
+                to_email=recipient_email,
+                subject=email_content['subject'],
+                html_body=email_content['html_body'],
+                text_body=email_content['text_body'],
+                use_existing_connection=use_existing_connection
+            )
+            
+            if success:
+                logger.info(f"Tracker确认邮件发送成功: {tracker_id} -> {recipient_email}")
+            else:
+                logger.error(f"Tracker确认邮件发送失败: {tracker_id} -> {recipient_email}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"发送Tracker确认邮件异常: {e}")
+            return False
+    
+    async def send_status_update_email(
+        self, 
+        tracker_id: str, 
+        recipient_email: str, 
+        filename: str,
+        status: str,
+        error_message: Optional[str] = None
+    ) -> bool:
+        """
+        发送状态更新邮件
+        
+        Args:
+            tracker_id: 跟踪ID
+            recipient_email: 收件人邮箱
+            filename: 文件名
+            status: 处理状态
+            error_message: 错误信息（可选）
+            
+        Returns:
+            bool: 发送是否成功
+        """
+        try:
+            # 生成邮件内容
+            email_content = email_template_manager.get_upload_status_email(
+                tracker_id=tracker_id,
+                status=status,
+                filename=filename,
+                recipient_email=recipient_email,
+                error_message=error_message
+            )
+            
+            # 发送邮件
+            success = await self._send_email(
+                to_email=recipient_email,
+                subject=email_content['subject'],
+                html_body=email_content['html_body'],
+                text_body=email_content['text_body']
+            )
+            
+            if success:
+                logger.info(f"状态更新邮件发送成功: {tracker_id} -> {recipient_email}")
+            else:
+                logger.error(f"状态更新邮件发送失败: {tracker_id} -> {recipient_email}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"发送状态更新邮件异常: {e}")
+            return False
+    
+    async def _send_email(
+        self, 
+        to_email: str, 
+        subject: str, 
+        html_body: str, 
+        text_body: str,
+        use_existing_connection: bool = False
+    ) -> bool:
+        """
+        发送邮件的内部方法
+        
+        Args:
+            to_email: 收件人邮箱
+            subject: 邮件主题
+            html_body: HTML邮件正文
+            text_body: 纯文本邮件正文
+            use_existing_connection: 是否使用现有SMTP连接
+            
+        Returns:
+            bool: 发送是否成功
+        """
+        try:
+            from app.services.email_service import email_service
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            from app.core.config import settings
+            
+            # 如果不使用现有连接，则连接SMTP服务器
+            if not use_existing_connection:
+                if not await email_service.connect_smtp():
+                    logger.error("无法连接SMTP服务器")
+                    return False
+            
+            # 创建邮件消息
+            msg = MIMEMultipart('alternative')
+            msg['From'] = settings.SMTP_USER
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            
+            # 添加纯文本和HTML内容
+            text_part = MIMEText(text_body, 'plain', 'utf-8')
+            html_part = MIMEText(html_body, 'html', 'utf-8')
+            
+            msg.attach(text_part)
+            msg.attach(html_part)
+            
+            # 发送邮件
+            email_service.smtp_connection.send_message(msg)
+            
+            # 如果不使用现有连接，则断开连接
+            if not use_existing_connection:
+                await email_service.disconnect_smtp()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"发送邮件失败: {e}")
+            # 如果不使用现有连接，则尝试断开
+            if not use_existing_connection:
+                try:
+                    await email_service.disconnect_smtp()
+                except:
+                    pass
+            return False

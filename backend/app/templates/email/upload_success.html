@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件处理完成</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 300;
+        }
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .success-box {
+            background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+            border: 2px solid #4CAF50;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .success-box h2 {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+            font-size: 22px;
+        }
+        .success-box .celebration {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        .tracker-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .tracker-id {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 15px 0;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #666;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="icon">✅</div>
+            <h1>文件处理完成</h1>
+            <p>{{system_name}}</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <div class="celebration">🎉</div>
+                <h2>处理成功！</h2>
+                <p>您的文件 <strong>{{filename}}</strong> 已成功处理完成</p>
+                <div class="tracker-info">
+                    <p>跟踪ID：<span class="tracker-id">{{tracker_id}}</span></p>
+                </div>
+            </div>
+            
+            <p><strong>处理完成时间：</strong>{{update_time}}</p>
+            
+            <div style="text-align: center;">
+                <a href="{{query_url}}" class="button">查看详细信息</a>
+            </div>
+            
+            <p>感谢您使用我们的服务！</p>
+        </div>
+        
+        <div class="footer">
+            <p>此邮件由系统自动发送，请勿直接回复。</p>
+            <p>© {{system_name}}</p>
+        </div>
+    </div>
+</body>
+</html>

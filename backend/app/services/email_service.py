@@ -55,6 +55,22 @@ class EmailService:
         except Exception as e:
             logger.error(f"IMAP连接失败: {e}")
             return False
+
+    async def check_imap_connection(self) -> bool:
+        """检查并维护IMAP连接"""
+        if self.imap_connection:
+            try:
+                # 使用NOOP检查连接是否仍然有效
+                status, _ = self.imap_connection.noop()
+                if status == 'OK':
+                    return True
+            except (imaplib.IMAP4.abort, imaplib.IMAP4.error, ConnectionResetError) as e:
+                logger.warning(f"IMAP连接已失效: {e}，正在尝试重新连接...")
+                await self.disconnect_imap()  # 确保旧连接被清理
+
+        # 如果连接不存在或已失效，则重新连接
+        logger.info("IMAP连接不存在或已失效，正在建立新连接...")
+        return await self.connect_imap()
     
     async def disconnect_imap(self):
         """断开IMAP连接"""
@@ -280,7 +296,8 @@ class EmailService:
     async def fetch_new_emails(self, db: AsyncSession) -> List[Dict[str, Any]]:
         """获取新邮件"""
         try:
-            if not await self.connect_imap():
+            # 检查并维护IMAP连接
+            if not await self.check_imap_connection():
                 return []
             
             # 选择邮箱
@@ -419,21 +436,19 @@ class EmailService:
                         logger.error(f"标记邮件为已读失败 {email_id}: {mark_error}")
                     continue
             
-            await self.disconnect_imap()
             return processed_emails
             
         except Exception as e:
             logger.error(f"获取邮件失败: {e}")
-            # 确保断开IMAP连接
-            try:
-                await self.disconnect_imap()
-            except Exception as disconnect_error:
-                logger.error(f"断开IMAP连接失败: {disconnect_error}")
+            # 发生异常时，尝试断开连接，以便下次能重建
+            await self.disconnect_imap()
             return []
     
     async def save_email_records(self, email_records: List[Dict[str, Any]], db: AsyncSession):
         """保存邮件记录到数据库"""
         try:
+            saved_records = []  # 用于存储成功保存的记录，以便发送确认邮件
+            
             for record in email_records:
                 for attachment in record['attachments']:
                     # 生成tracker_id
@@ -458,12 +473,12 @@ class EmailService:
                     article = Article(
                         title=record['subject'] or f"邮件附件: {attachment['original_filename']}",
                         description=f"通过邮件上传的附件: {attachment['original_filename']}",
-                        github_url="",  # 邮件上传没有GitHub URL
+                        github_url=f"email://{attachment['stored_filename']}",  # 唯一URL
                         github_owner="email_upload",
                         github_repo="attachments",
                         file_type=self._get_file_type_enum(attachment['file_type']),
                         file_size=attachment['file_size'],
-                        user_id="system",  # 系统用户ID，需要根据实际情况调整
+                        user_id=record['sender_email'],  # 使用发送者邮箱作为用户标识
                         method=UploadMethod.EMAIL_UPLOAD,
                         tracker_id=tracker_id,
                         processing_status=ProcessingStatus.PENDING,
@@ -477,6 +492,14 @@ class EmailService:
                     )
                     
                     db.add(article)
+                    
+                    # 记录成功保存的信息，用于发送确认邮件
+                    saved_records.append({
+                        'tracker_id': tracker_id,
+                        'sender_email': record['sender_email'],
+                        'filename': attachment['original_filename'],
+                        'file_size': attachment['file_size']
+                    })
             
             await db.commit()
             
@@ -484,6 +507,9 @@ class EmailService:
             await self._update_article_references(db)
             
             logger.info(f"保存了 {len(email_records)} 条邮件记录和对应的文章记录")
+            
+            # 发送Tracker ID确认邮件
+            await self._send_confirmation_emails(saved_records, db)
             
         except Exception as e:
             logger.error(f"保存邮件记录失败: {e}")
@@ -520,6 +546,54 @@ class EmailService:
             pass
         except Exception as e:
             logger.error(f"更新文章引用失败: {e}")
+    
+    async def _send_confirmation_emails(self, saved_records: List[Dict[str, Any]], db: AsyncSession):
+        """发送Tracker ID确认邮件"""
+        try:
+            from app.services.tracker_service import TrackerService
+            
+            # 创建tracker服务实例
+            tracker_service = TrackerService(db)
+            
+            # 批量发送邮件时，只连接一次SMTP
+            if not await self.connect_smtp():
+                logger.error("无法连接SMTP服务器，跳过发送确认邮件")
+                return
+
+            # 为每个成功保存的记录发送确认邮件
+            for record in saved_records:
+                try:
+                    success = await tracker_service.send_tracker_confirmation_email(
+                        tracker_id=record['tracker_id'],
+                        recipient_email=record['sender_email'],
+                        filename=record['filename'],
+                        file_size=record['file_size'],
+                        use_existing_connection=True  # 告知tracker_service使用现有连接
+                    )
+                    
+                    if success:
+                        logger.info(f"确认邮件发送成功: {record['tracker_id']} -> {record['sender_email']}")
+                    else:
+                        logger.warning(f"确认邮件发送失败: {record['tracker_id']} -> {record['sender_email']}")
+                        
+                except Exception as e:
+                    logger.error(f"发送确认邮件异常 {record['tracker_id']}: {e}")
+                    # 继续处理其他邮件，不因单个邮件失败而中断
+                    continue
+            
+            # 断开SMTP连接
+            await self.disconnect_smtp()
+
+            logger.info(f"完成发送 {len(saved_records)} 封确认邮件")
+            
+        except Exception as e:
+            logger.error(f"批量发送确认邮件失败: {e}")
+            # 邮件发送失败不应该影响数据保存，所以这里只记录错误
+            # 确保在异常时也断开连接
+            try:
+                await self.disconnect_smtp()
+            except Exception as disconnect_error:
+                logger.error(f"断开SMTP连接失败: {disconnect_error}")
 
 
 # 创建全局邮件服务实例
