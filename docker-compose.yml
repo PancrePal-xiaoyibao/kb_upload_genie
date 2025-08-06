@@ -22,6 +22,14 @@ services:
       retries: 3
       start_period: 40s
     user: "1001:1001"  # 使用与Dockerfile中相同的用户ID
+    # 添加初始化命令确保目录权限正确
+    command: >
+      sh -c "
+        mkdir -p /app/uploads /app/logs /app/data &&
+        chown -R 1001:1001 /app/uploads /app/logs /app/data &&
+        chmod -R 775 /app/uploads /app/logs /app/data &&
+        exec uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+      "
 
   # 前端服务
   frontend:

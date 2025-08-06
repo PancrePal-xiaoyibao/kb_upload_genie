@@ -32,6 +32,37 @@ async def lifespan(app: FastAPI):
     # 启动时执行
     logger.info("正在启动 KB Upload Genie 后端服务...")
     
+    # 确保上传目录存在并设置正确权限
+    import os
+    from pathlib import Path
+    
+    upload_dir = Path(settings.UPLOAD_DIR)
+    email_attachments_dir = upload_dir / "email_attachments"
+    
+    try:
+        # 创建目录
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        email_attachments_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 设置目录权限（775 = rwxrwxr-x）
+        os.chmod(upload_dir, 0o775)
+        os.chmod(email_attachments_dir, 0o775)
+        
+        logger.info(f"上传目录创建成功: {upload_dir}")
+        logger.info(f"邮件附件目录创建成功: {email_attachments_dir}")
+        
+        # 测试写入权限
+        test_file = upload_dir / ".permission_test"
+        test_file.write_text("test")
+        test_file.unlink()  # 删除测试文件
+        logger.info("上传目录写入权限测试通过")
+        
+    except PermissionError as e:
+        logger.error(f"上传目录权限设置失败: {e}")
+        logger.warning("将尝试使用当前权限继续运行")
+    except Exception as e:
+        logger.error(f"上传目录创建失败: {e}")
+    
     # 创建数据库表
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

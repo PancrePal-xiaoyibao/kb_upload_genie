@@ -26,6 +26,70 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制应用代码
 COPY . .
 
+# 创建必要的目录和子目录，设置正确的权限
+RUN mkdir -p uploads/email_attachments logs data && \
+    chown -R appuser:appgroup /app && \
+    chmod -R 775 uploads logs data && \
+    chmod -R g+s uploads logs data
+
+# 切换到非root用户
+USER appuser
+# 后端容器 - KB Upload Genie Backend
+FROM python:3.12-slim-bullseye
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    libmagic1 \
+    libmagic-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建非root用户
+RUN groupadd -g 1001 appgroup && \
+    useradd -r -u 1001 -g appgroup appuser
+
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY . .
+
+# 后端容器 - KB Upload Genie Backend
+FROM python:3.12-slim-bullseye
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    libmagic1 \
+    libmagic-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建非root用户
+RUN groupadd -g 1001 appgroup && \
+    useradd -r -u 1001 -g appgroup appuser
+
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY . .
+
 # 创建必要的目录和子目录
 RUN mkdir -p uploads/email_attachments logs data && \
     chown -R appuser:appgroup /app && \
