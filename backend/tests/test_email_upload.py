@@ -34,7 +34,7 @@ class TestEmailService:
     def test_is_allowed_domain(self):
         """测试域名白名单功能"""
         # 模拟配置
-        with patch.object(settings, 'ALLOWED_EMAIL_DOMAINS', ['gmail.com', 'outlook.com']):
+        with patch.object(settings, 'EMAIL_ALLOWED_DOMAINS', ['gmail.com', 'outlook.com']):
             assert self.email_service._is_allowed_domain('user@gmail.com') == True
             assert self.email_service._is_allowed_domain('user@outlook.com') == True
             assert self.email_service._is_allowed_domain('user@yahoo.com') == False

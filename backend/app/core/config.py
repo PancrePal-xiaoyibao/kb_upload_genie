@@ -132,15 +132,6 @@ class Settings(BaseSettings):
         description="允许的邮件域名"
     )
     
-    # 兼容旧的环境变量名
-    ALLOWED_EMAIL_DOMAINS: Union[str, List[str]] = Field(
-        default="gmail.com,outlook.com,qq.com,163.com",
-        description="允许的邮件域名（兼容字段）"
-    )
-    MAX_EMAIL_ATTACHMENTS: int = Field(default=5, description="每封邮件最大附件数量（兼容字段）")
-    MAX_ATTACHMENT_SIZE: int = Field(default=10 * 1024 * 1024, description="单个附件最大大小（兼容字段）")
-    EMAIL_RATE_LIMIT_HOURLY: int = Field(default=5, description="每小时邮件发送限制（兼容字段）")
-    EMAIL_RATE_LIMIT_DAILY: int = Field(default=20, description="每天邮件发送限制（兼容字段）")
     
     # Redis配置（用于频率限制）
     REDIS_URL: Optional[str] = Field(default=None, description="Redis连接URL")
@@ -191,6 +182,14 @@ class Settings(BaseSettings):
         """解析允许的邮件域名列表"""
         if isinstance(v, str):
             return [domain.strip() for domain in v.split(",")]
+        return v
+    
+    @field_validator("EMAIL_SYSTEM_SENDERS", mode="before")
+    @classmethod
+    def parse_email_system_senders(cls, v):
+        """解析系统邮件发送者列表"""
+        if isinstance(v, str):
+            return [sender.strip() for sender in v.split(",")]
         return v
     
     # Redis启用标志
