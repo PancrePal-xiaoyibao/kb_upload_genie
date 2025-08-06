@@ -26,9 +26,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制应用代码
 COPY . .
 
-# 创建必要的目录
-RUN mkdir -p uploads logs && \
-    chown -R appuser:appgroup /app
+# 创建必要的目录和子目录
+RUN mkdir -p uploads/email_attachments logs data && \
+    chown -R appuser:appgroup /app && \
+    chmod -R 755 uploads logs data
 
 # 切换到非root用户
 USER appuser

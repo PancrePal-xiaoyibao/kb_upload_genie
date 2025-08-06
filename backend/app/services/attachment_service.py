@@ -23,8 +23,69 @@ class AttachmentService:
     """附件处理服务类"""
     
     def __init__(self):
-        self.upload_dir = Path(settings.UPLOAD_DIR) / "email_attachments"
-        self.upload_dir.mkdir(parents=True, exist_ok=True)
+        """初始化附件服务"""
+        try:
+            # 使用配置中的上传目录
+            base_upload_dir = Path(getattr(settings, 'UPLOAD_DIR', 'uploads'))
+            self.upload_dir = base_upload_dir / "email_attachments"
+            
+            # 尝试创建目录
+            self.upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 验证目录权限
+            if not self._check_directory_permissions():
+                raise PermissionError(f"无法写入上传目录: {self.upload_dir}")
+                
+            logger.info(f"附件服务初始化成功，上传目录: {self.upload_dir}")
+            
+        except PermissionError as e:
+            logger.error(f"附件服务初始化失败 - 权限错误: {e}")
+            # 尝试使用临时目录作为备选方案
+            self._setup_fallback_directory()
+        except Exception as e:
+            logger.error(f"附件服务初始化失败: {e}")
+            # 尝试使用临时目录作为备选方案
+            self._setup_fallback_directory()
+    
+    def _check_directory_permissions(self) -> bool:
+        """检查目录权限"""
+        try:
+            # 尝试创建测试文件
+            test_file = self.upload_dir / ".permission_test"
+            test_file.write_text("test")
+            test_file.unlink()
+            return True
+        except Exception as e:
+            logger.warning(f"目录权限检查失败: {e}")
+            return False
+    
+    def _setup_fallback_directory(self):
+        """设置备选目录"""
+        try:
+            import tempfile
+            fallback_dir = Path(tempfile.gettempdir()) / "kb_upload_genie" / "email_attachments"
+            fallback_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 验证备选目录权限
+            if self._check_fallback_permissions(fallback_dir):
+                self.upload_dir = fallback_dir
+                logger.warning(f"使用临时目录作为上传目录: {self.upload_dir}")
+            else:
+                raise RuntimeError("无法找到可写的上传目录")
+                
+        except Exception as e:
+            logger.error(f"设置备选目录失败: {e}")
+            raise RuntimeError(f"附件服务初始化完全失败: {e}")
+    
+    def _check_fallback_permissions(self, directory: Path) -> bool:
+        """检查备选目录权限"""
+        try:
+            test_file = directory / ".permission_test"
+            test_file.write_text("test")
+            test_file.unlink()
+            return True
+        except Exception:
+            return False
     
     def _get_file_hash(self, file_data: bytes) -> str:
         """计算文件哈希值"""

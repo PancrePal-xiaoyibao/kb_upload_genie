@@ -1,15 +1,15 @@
 services:
   # 后端服务
   backend:
-    image: 
-    container_name: ghcr.io/pancrepal-xiaoyibao/kb-backend:latest
+    image: ghcr.io/pancrepal-xiaoyibao/kb-backend:latest
+    container_name: kb-backend
     env_file:
       - backend/.env
     environment:
       - PYTHONPATH=/app
     volumes:
       - backend_data:/app/data
-      - backend_data:/app/uploads
+      - backend_uploads:/app/uploads
       - backend_logs:/app/logs
       - ./backend/.env:/app/.env:ro
     networks:
@@ -21,6 +21,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    user: "1001:1001"  # 使用与Dockerfile中相同的用户ID
 
   # 前端服务
   frontend:
@@ -39,6 +40,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+# 卷定义
+volumes:
+  backend_data:
+    driver: local
+  backend_uploads:
+    driver: local
+  backend_logs:
+    driver: local
 
 # 网络
 networks:
