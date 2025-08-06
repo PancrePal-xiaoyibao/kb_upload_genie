@@ -3,6 +3,7 @@
 处理跟踪ID查询和状态管理
 """
 
+import asyncio
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -263,8 +264,8 @@ class TrackerService:
             # 导入邮件服务（避免循环导入）
             from app.services.email_service import email_service
             
-            # 生成邮件内容
-            email_content = email_template_manager.get_tracker_confirmation_email(
+            # 生成邮件内容 - 注意这里需要await
+            email_content = await email_template_manager.get_tracker_confirmation_email(
                 tracker_id=tracker_id,
                 filename=filename,
                 file_size=file_size,
@@ -313,8 +314,8 @@ class TrackerService:
             bool: 发送是否成功
         """
         try:
-            # 生成邮件内容
-            email_content = email_template_manager.get_upload_status_email(
+            # 生成邮件内容 - 注意这里需要await
+            email_content = await email_template_manager.get_upload_status_email(
                 tracker_id=tracker_id,
                 status=status,
                 filename=filename,
@@ -388,7 +389,7 @@ class TrackerService:
             msg.attach(html_part)
             
             # 发送邮件
-            email_service.smtp_connection.send_message(msg)
+            await asyncio.to_thread(email_service.smtp_connection.send_message, msg)
             
             # 如果不使用现有连接，则断开连接
             if not use_existing_connection:

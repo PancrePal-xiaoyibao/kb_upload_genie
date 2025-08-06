@@ -133,11 +133,11 @@
                 </div>
             </div>
             
-            {{#if error_message}}
+            {% if error_message %}
             <div class="error-message">
                 <strong>错误信息：</strong>{{error_message}}
             </div>
-            {{/if}}
+            {% endif %}
             
             <p><strong>失败时间：</strong>{{update_time}}</p>
             

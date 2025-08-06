@@ -6,9 +6,9 @@
 跟踪ID：{{tracker_id}}
 失败时间：{{update_time}}
 
-{{#if error_message}}
+{% if error_message %}
 错误信息：{{error_message}}
-{{/if}}
+{% endif %}
 
 建议解决方案：
 • 检查文件格式是否符合要求

@@ -3,6 +3,7 @@
 处理邮件发送和接收功能
 """
 
+import asyncio
 import imaplib
 import email
 import smtplib
@@ -83,6 +84,8 @@ class EmailService:
         except Exception as e:
             logger.error(f"断开IMAP连接时出错: {e}")
     
+
+
     async def connect_smtp(self) -> bool:
         """连接到SMTP服务器"""
         try:
@@ -90,14 +93,27 @@ class EmailService:
                 logger.error("SMTP配置不完整")
                 return False
             
-            # 创建SMTP连接
-            self.smtp_connection = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+            # 根据端口选择连接方式
+            if settings.SMTP_PORT == 465:
+                # 端口465使用SSL连接
+                self.smtp_connection = await asyncio.to_thread(
+                    smtplib.SMTP_SSL, settings.SMTP_HOST, settings.SMTP_PORT
+                )
+            else:
+                # 其他端口使用普通连接
+                self.smtp_connection = await asyncio.to_thread(
+                    smtplib.SMTP, settings.SMTP_HOST, settings.SMTP_PORT
+                )
+                
+                # 如果启用TLS且不是SSL端口，则启动TLS
+                if settings.SMTP_TLS and settings.SMTP_PORT != 465:
+                    await asyncio.to_thread(self.smtp_connection.starttls)
             
-            if settings.SMTP_TLS:
-                self.smtp_connection.starttls()
+            await asyncio.to_thread(
+                self.smtp_connection.login, settings.SMTP_USER, settings.SMTP_PASSWORD
+            )
             
-            self.smtp_connection.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            logger.info("SMTP连接成功")
+            logger.info(f"SMTP连接成功 - {settings.SMTP_HOST}:{settings.SMTP_PORT}")
             return True
             
         except Exception as e:
@@ -108,7 +124,7 @@ class EmailService:
         """断开SMTP连接"""
         try:
             if self.smtp_connection:
-                self.smtp_connection.quit()
+                await asyncio.to_thread(self.smtp_connection.quit)
                 self.smtp_connection = None
                 logger.info("SMTP连接已断开")
         except Exception as e:
@@ -550,6 +566,11 @@ class EmailService:
     async def _send_confirmation_emails(self, saved_records: List[Dict[str, Any]], db: AsyncSession):
         """发送Tracker ID确认邮件"""
         try:
+            # 检查是否启用自动回复邮件
+            if not settings.AUTO_REPLY_ENABLED or not settings.TRACKER_EMAIL_ENABLED:
+                logger.info("自动回复邮件功能已禁用，跳过发送确认邮件")
+                return
+            
             from app.services.tracker_service import TrackerService
             
             # 创建tracker服务实例
@@ -560,9 +581,12 @@ class EmailService:
                 logger.error("无法连接SMTP服务器，跳过发送确认邮件")
                 return
 
+            success_count = 0
             # 为每个成功保存的记录发送确认邮件
             for record in saved_records:
                 try:
+                    logger.info(f"正在发送确认邮件: {record['tracker_id']} -> {record['sender_email']}")
+                    
                     success = await tracker_service.send_tracker_confirmation_email(
                         tracker_id=record['tracker_id'],
                         recipient_email=record['sender_email'],
@@ -572,6 +596,7 @@ class EmailService:
                     )
                     
                     if success:
+                        success_count += 1
                         logger.info(f"确认邮件发送成功: {record['tracker_id']} -> {record['sender_email']}")
                     else:
                         logger.warning(f"确认邮件发送失败: {record['tracker_id']} -> {record['sender_email']}")
@@ -584,7 +609,7 @@ class EmailService:
             # 断开SMTP连接
             await self.disconnect_smtp()
 
-            logger.info(f"完成发送 {len(saved_records)} 封确认邮件")
+            logger.info(f"完成发送确认邮件: {success_count}/{len(saved_records)} 成功")
             
         except Exception as e:
             logger.error(f"批量发送确认邮件失败: {e}")
