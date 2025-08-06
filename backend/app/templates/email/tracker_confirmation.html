@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传确认</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 300;
+        }
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .tracker-box {
+            background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+            border: 2px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .tracker-id {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2e7d32;
+            font-family: 'Courier New', monospace;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+        .file-info {
+            background-color: #fafafa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .file-info h4 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 15px 0;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        .steps {
+            background-color: #fafafa;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .steps h4 {
+            margin-top: 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 3px solid #4CAF50;
+        }
+        .step-number {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 1px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .warning-box h4 {
+            margin-top: 0;
+            color: #856404;
+            display: flex;
+            align-items: center;
+        }
+        .warning-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .warning-box li {
+            margin: 8px 0;
+            color: #856404;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #666;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #666;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .info-row {
+                flex-direction: column;
+            }
+            .info-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="icon">📁</div>
+            <h1>文件上传确认</h1>
+            <p>{{system_name}}</p>
+        </div>
+        
+        <div class="content">
+            <p>您好！</p>
+            
+            <p>我们已成功接收到您通过邮件上传的文件，系统已为您生成唯一的跟踪ID。</p>
+            
+            <div class="tracker-box">
+                <h3>🎯 您的跟踪ID</h3>
+                <div class="tracker-id">{{tracker_id}}</div>
+                <p><small>请保存此ID，用于查询文件处理状态</small></p>
+            </div>
+            
+            <div class="file-info">
+                <h4>📄 文件信息</h4>
+                <div class="info-row">
+                    <span class="info-label">文件名：</span>
+                    <span class="info-value">{{filename}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">文件大小：</span>
+                    <span class="info-value">{{file_size}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">上传时间：</span>
+                    <span class="info-value">{{upload_time}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">当前状态：</span>
+                    <span class="info-value">待处理</span>
+                </div>
+            </div>
+            
+            <div class="steps">
+                <h4>🔍 如何查询处理状态</h4>
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <strong>在线查询：</strong> 点击下方按钮直接查询
+                    <br>
+                    <a href="{{query_url}}" class="button">立即查询状态</a>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <strong>网页访问：</strong> 访问 <a href="{{query_url}}">{{query_url}}</a>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <strong>手动输入：</strong> 在系统首页输入跟踪ID：<code>{{tracker_id}}</code>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <h4>⏰ 处理时间说明</h4>
+                <ul>
+                    <li>文档类文件：通常在1-2小时内完成处理</li>
+                    <li>代码类文件：通常在30分钟内完成处理</li>
+                    <li>大型文件：可能需要更长时间，请耐心等待</li>
+                </ul>
+            </div>
+            
+            <p>如有任何问题，请联系我们：<a href="mailto:{{support_email}}">{{support_email}}</a></p>
+        </div>
+        
+        <div class="footer">
+            <p>此邮件由系统自动发送，请勿直接回复。</p>
+            <div class="social-links">
+                <a href="{{query_url}}">查询状态</a> |
+                <a href="mailto:{{support_email}}">技术支持</a>
+            </div>
+            <p>© {{system_name}} - 让知识分享更简单</p>
+        </div>
+    </div>
+</body>
+</html>

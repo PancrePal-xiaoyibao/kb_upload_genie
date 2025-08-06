@@ -14,6 +14,7 @@ import logging
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
+from app.services.email_service import email_service
 from app.tasks.email_tasks import email_task_manager
 from app.core.init_admin import init_admin
 
@@ -44,8 +45,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"管理员用户初始化失败: {str(e)}")
     
-    # 启动邮件检查任务
+    # 启动邮件服务
     if settings.EMAIL_UPLOAD_ENABLED:
+        await email_service.check_imap_connection()
+        logger.info("邮件服务IMAP连接已建立")
         await email_task_manager.start_email_checking()
         logger.info("邮件检查任务已启动")
     else:
@@ -62,6 +65,8 @@ async def lifespan(app: FastAPI):
     if settings.EMAIL_UPLOAD_ENABLED:
         await email_task_manager.stop_email_checking()
         logger.info("邮件检查任务已停止")
+        await email_service.disconnect_imap()
+        logger.info("邮件服务IMAP连接已断开")
 
 
 # 创建FastAPI应用实例

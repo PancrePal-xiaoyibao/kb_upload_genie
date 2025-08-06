@@ -3,6 +3,14 @@
 提供测试所需的fixtures和配置
 """
 
+import sys
+from pathlib import Path
+
+# 将项目根目录添加到sys.path
+# 这确保了测试可以像应用一样找到模块
+ROOT_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
 import pytest
 import asyncio
 import tempfile
@@ -12,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
-from app.main import app
+from main import app
 from app.core.database import Base, get_db
 from app.core.config import settings
 

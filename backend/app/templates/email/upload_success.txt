@@ -1,0 +1,15 @@
+{{system_name}} - 文件处理完成
+
+✅ 处理成功！
+
+您的文件 {{filename}} 已成功处理完成
+跟踪ID：{{tracker_id}}
+处理完成时间：{{update_time}}
+
+查看详细信息：{{query_url}}
+
+感谢您使用我们的服务！
+
+---
+此邮件由系统自动发送，请勿直接回复。
+© {{system_name}}
