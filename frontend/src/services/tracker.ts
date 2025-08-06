@@ -29,7 +29,7 @@ export interface TrackerQueryRequest {
  * 跟踪服务类
  */
 export class TrackerService {
-  private static baseUrl = '/api/v1/tracker';
+  private static baseUrl = '/v1/tracker';
 
   /**
    * 通过POST方法查询跟踪状态
