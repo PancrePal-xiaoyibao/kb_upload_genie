@@ -84,7 +84,7 @@ backend/htmlcov/
 *.sqlite3
 
 # Docker
-.dockerignore
+# .dockerignore
 
 # 测试
 .coverage

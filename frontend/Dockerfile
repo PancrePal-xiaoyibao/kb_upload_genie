@@ -5,13 +5,15 @@ WORKDIR /app
 
 # 复制依赖文件
 COPY package*.json ./
-COPY yarn.lock* ./
 
 # 安装依赖
 RUN npm ci
 
 # 复制源码
 COPY . .
+
+# 检查文件是否正确复制
+RUN ls -la && echo "检查src目录:" && ls -la src/
 
 # 构建应用
 RUN npm run build

@@ -1,162 +1,98 @@
-name: Docker Build and Deploy
+name: Build and Push Docker Image to GHCR
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch:  # 手动触发
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME_FRONTEND: ${{ github.repository }}/kb-frontend
-  IMAGE_NAME_BACKEND: ${{ github.repository }}/kb-backend
+permissions:
+  contents: read       
+  packages: write
 
 jobs:
-  build-and-push:
+  build-frontend:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Extract metadata for frontend
-      id: meta-frontend
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Extract metadata for backend
-      id: meta-backend
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push frontend image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile
-        push: true
-        tags: ${{ steps.meta-frontend.outputs.tags }}
-        labels: ${{ steps.meta-frontend.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64,linux/arm64
-
-    - name: Build and push backend image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./backend
-        file: ./backend/Dockerfile
-        push: true
-        tags: ${{ steps.meta-backend.outputs.tags }}
-        labels: ${{ steps.meta-backend.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64,linux/arm64
-
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.event_name == 'push'
     
     steps:
-    - name: Run Trivy vulnerability scanner for frontend
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
-        format: 'sarif'
-        output: 'trivy-frontend-results.sarif'
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner for backend
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
-        format: 'sarif'
-        output: 'trivy-backend-results.sarif'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: '.'
+      - name: Get short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
-  deploy:
+      - name: Log in to GHCR with GITHUB_TOKEN
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/pancrepal-xiaoyibao/kb-frontend:latest
+            ghcr.io/pancrepal-xiaoyibao/kb-frontend:${{ github.sha }}
+            ghcr.io/pancrepal-xiaoyibao/kb-frontend:${{ steps.vars.outputs.short_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Frontend build summary
+        run: |
+          echo "✅ 前端容器构建完成！"
+          echo ""
+          echo "前端镜像标签:"
+          echo "  - ghcr.io/pancrepal-xiaoyibao/kb-frontend:latest"
+          echo "  - ghcr.io/pancrepal-xiaoyibao/kb-frontend:${{ steps.vars.outputs.short_sha }}"
+
+  build-backend:
     runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment: production
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Create deployment package
-      run: |
-        mkdir -p deploy
-        cp docker-compose.yml deploy/
-        cp -r backend/.env deploy/backend.env
-        
-        # 更新docker-compose.yml中的镜像标签
-        sed -i "s|image: kb_frontend|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest|g" deploy/docker-compose.yml
-        sed -i "s|image: kb_backend|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest|g" deploy/docker-compose.yml
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Upload deployment artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-package
-        path: deploy/
-        retention-days: 30
+      - name: Get short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
-    # 如果你有服务器部署，可以添加以下步骤
-    # - name: Deploy to server
-    #   uses: appleboy/ssh-action@v1.0.0
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     username: ${{ secrets.USERNAME }}
-    #     key: ${{ secrets.SSH_KEY }}
-    #     script: |
-    #       cd /path/to/deployment
-    #       docker compose pull
-    #       docker compose up -d
-    #       docker system prune -f
+      - name: Log in to GHCR with GITHUB_TOKEN
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  notify:
-    runs-on: ubuntu-latest
-    needs: [build-and-push, deploy]
-    if: always()
-    
-    steps:
-    - name: Notify deployment status
-      run: |
-        if [ "${{ needs.build-and-push.result }}" == "success" ] && [ "${{ needs.deploy.result }}" == "success" ]; then
-          echo "✅ 部署成功！"
-          echo "前端镜像: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest"
-          echo "后端镜像: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest"
-        else
-          echo "❌ 部署失败，请检查日志"
-          exit 1
-        fi
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/pancrepal-xiaoyibao/kb-backend:latest
+            ghcr.io/pancrepal-xiaoyibao/kb-backend:${{ github.sha }}
+            ghcr.io/pancrepal-xiaoyibao/kb-backend:${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            # 构建时传递环境变量
+            DATABASE_URL=${{ secrets.DATABASE_URL || 'sqlite:///./kb_upload.db' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Backend build summary
+        run: |
+          echo "✅ 后端容器构建完成！"
+          echo ""
+          echo "后端镜像标签:"
+          echo "  - ghcr.io/pancrepal-xiaoyibao/kb-backend:latest" 
+          echo "  - ghcr.io/pancrepal-xiaoyibao/kb-backend:${{ steps.vars.outputs.short_sha }}"
