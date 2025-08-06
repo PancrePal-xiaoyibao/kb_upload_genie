@@ -1,19 +1,19 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
-import ModernProtectedRoute from '@/components/ModernProtectedRoute';
-import ModernAdminLayout from '@/components/ModernAdminLayout';
-import ModernLayout from '@/components/ModernLayout';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { ToastProvider } from '@/components/Toast';
-import AdminLogin from '@/pages/admin/Login';
-import Dashboard from '@/pages/admin/Dashboard';
-import Users from '@/pages/admin/Users';
-import System from '@/pages/admin/System';
-import ModernHome from '@/pages/ModernHome';
-import ModernUpload from '@/pages/ModernUpload';
-import TrackerQuery from '@/pages/TrackerQuery';
-import TrackerTest from '@/pages/TrackerTest';
+import { AuthProvider } from './contexts/AuthContext';
+import ModernProtectedRoute from './components/ModernProtectedRoute';
+import ModernAdminLayout from './components/ModernAdminLayout';
+import ModernLayout from './components/ModernLayout';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
+import AdminLogin from './pages/admin/Login';
+import Dashboard from './pages/admin/Dashboard';
+import Users from './pages/admin/Users';
+import System from './pages/admin/System';
+import ModernHome from './pages/ModernHome';
+import ModernUpload from './pages/ModernUpload';
+import TrackerQuery from './pages/TrackerQuery';
+import TrackerTest from './pages/TrackerTest';
 import './App.css';
 
 const App: React.FC = () => {
