@@ -41,6 +41,24 @@ class FileType(str, enum.Enum):
     OTHER = "other"            # 其他类型
 
 
+class UploadMethod(str, enum.Enum):
+    """上传方法枚举"""
+    GITHUB_DIRECT = "github_direct"    # 直接GitHub上传
+    EMAIL_UPLOAD = "email_upload"      # 邮件上传
+    SIMPLE_EMAIL = "simple_email"      # 简单邮件上传
+    WEB_UPLOAD = "web_upload"          # 网页上传
+    API_UPLOAD = "api_upload"          # API上传
+    BATCH_IMPORT = "batch_import"      # 批量导入
+
+
+class ProcessingStatus(str, enum.Enum):
+    """处理状态枚举"""
+    PENDING = "pending"         # 待处理
+    PROCESSING = "processing"   # 处理中
+    COMPLETED = "completed"     # 已完成
+    REJECTED = "rejected"       # 已拒绝
+
+
 class Article(Base):
     """文章表模型"""
     
@@ -140,6 +158,26 @@ class Article(Base):
         default=CopyrightStatus.UNKNOWN,
         index=True,
         comment="版权状态"
+    )
+    
+    # 上传跟踪信息
+    method: Mapped[Optional[UploadMethod]] = mapped_column(
+        SQLEnum(UploadMethod),
+        default=UploadMethod.GITHUB_DIRECT,
+        index=True,
+        comment="上传方法"
+    )
+    tracker_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        unique=True,
+        index=True,
+        comment="跟踪ID"
+    )
+    processing_status: Mapped[ProcessingStatus] = mapped_column(
+        SQLEnum(ProcessingStatus),
+        default=ProcessingStatus.PENDING,
+        index=True,
+        comment="处理状态"
     )
     
     # 统计信息

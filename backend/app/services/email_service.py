@@ -20,7 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.email_upload import EmailUpload, EmailUploadStatus, EmailRateLimit, EmailDomainRule
+from app.models.article import Article, UploadMethod, ProcessingStatus
 from app.services.redis_service import redis_service
+from app.utils.tracker_utils import generate_tracker_id
 
 logger = logging.getLogger(__name__)
 
@@ -434,6 +436,10 @@ class EmailService:
         try:
             for record in email_records:
                 for attachment in record['attachments']:
+                    # 生成tracker_id
+                    tracker_id = generate_tracker_id("EMAIL")
+                    
+                    # 保存到email_upload表
                     email_upload = EmailUpload(
                         sender_email_hash=record['sender_email_hash'],
                         sender_email=record['sender_email'],  # 存储原始邮箱
@@ -447,14 +453,73 @@ class EmailService:
                     )
                     
                     db.add(email_upload)
+                    
+                    # 同时保存到articles表以支持跟踪
+                    article = Article(
+                        title=record['subject'] or f"邮件附件: {attachment['original_filename']}",
+                        description=f"通过邮件上传的附件: {attachment['original_filename']}",
+                        github_url="",  # 邮件上传没有GitHub URL
+                        github_owner="email_upload",
+                        github_repo="attachments",
+                        file_type=self._get_file_type_enum(attachment['file_type']),
+                        file_size=attachment['file_size'],
+                        user_id="system",  # 系统用户ID，需要根据实际情况调整
+                        method=UploadMethod.EMAIL_UPLOAD,
+                        tracker_id=tracker_id,
+                        processing_status=ProcessingStatus.PENDING,
+                        extra_metadata={
+                            "email_upload_id": None,  # 将在提交后更新
+                            "sender_email": record['sender_email'],
+                            "email_subject": record['subject'],
+                            "original_filename": attachment['original_filename'],
+                            "stored_filename": attachment['stored_filename']
+                        }
+                    )
+                    
+                    db.add(article)
             
             await db.commit()
-            logger.info(f"保存了 {len(email_records)} 条邮件记录")
+            
+            # 更新articles表中的email_upload_id引用
+            await self._update_article_references(db)
+            
+            logger.info(f"保存了 {len(email_records)} 条邮件记录和对应的文章记录")
             
         except Exception as e:
             logger.error(f"保存邮件记录失败: {e}")
             await db.rollback()
             raise
+    
+    def _get_file_type_enum(self, file_extension: str):
+        """根据文件扩展名获取FileType枚举"""
+        from app.models.article import FileType
+        
+        ext_mapping = {
+            '.md': FileType.MARKDOWN,
+            '.ipynb': FileType.JUPYTER,
+            '.py': FileType.CODE,
+            '.js': FileType.CODE,
+            '.ts': FileType.CODE,
+            '.java': FileType.CODE,
+            '.cpp': FileType.CODE,
+            '.c': FileType.CODE,
+            '.txt': FileType.DOCUMENTATION,
+            '.doc': FileType.DOCUMENTATION,
+            '.docx': FileType.DOCUMENTATION,
+            '.pdf': FileType.DOCUMENTATION,
+            '.readme': FileType.README
+        }
+        
+        return ext_mapping.get(file_extension.lower(), FileType.OTHER)
+    
+    async def _update_article_references(self, db: AsyncSession):
+        """更新articles表中的email_upload_id引用"""
+        try:
+            # 这里可以添加逻辑来关联email_upload和article记录
+            # 由于两个表的结构不同，可能需要额外的关联表或字段
+            pass
+        except Exception as e:
+            logger.error(f"更新文章引用失败: {e}")
 
 
 # 创建全局邮件服务实例

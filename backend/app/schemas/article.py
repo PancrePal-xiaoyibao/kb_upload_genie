@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 
-from app.models.article import ArticleStatus, CopyrightStatus, FileType
+from app.models.article import ArticleStatus, CopyrightStatus, FileType, UploadMethod, ProcessingStatus
 
 
 class ArticleBase(BaseModel):
@@ -76,6 +76,9 @@ class ArticleInDB(ArticleBase):
     file_size: Optional[int] = None
     status: ArticleStatus
     copyright_status: CopyrightStatus
+    method: Optional[UploadMethod] = None
+    tracker_id: Optional[str] = None
+    processing_status: ProcessingStatus = ProcessingStatus.PENDING
     view_count: int = 0
     download_count: int = 0
     star_count: int = 0
